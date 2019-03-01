@@ -25,7 +25,6 @@ using namespace lib_vehicle_model;
 
 class MockParamServer : public ParameterServer {
   public:
-    ...
     MOCK_METHOD2(getParam, bool(const std::string& param_key, std::string& output));
     MOCK_METHOD2(getParam, bool(const std::string& param_key, double& output));
     MOCK_METHOD2(getParam, bool(const std::string& param_key, float& output));

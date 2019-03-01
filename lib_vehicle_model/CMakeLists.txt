@@ -103,7 +103,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-#  CATKIN_DEPENDS other_catkin_pkg
+  CATKIN_DEPENDS roscpp
 #  DEPENDS system_lib
 )
 
@@ -194,10 +194,14 @@ install(DIRECTORY include
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_temp.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
+catkin_add_gmock(${PROJECT_NAME}-test 
+  test/KinematicsSolverTest.cpp
+  test/ConstraintCheckerTest.cpp
+)
+if(TARGET ${PROJECT_NAME}-test)
+  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} ${catkin_LIBRARIES})
+  add_dependencies( ${PROJECT_NAME}-test ${catkin_EXPORTED_TARGETS})
+endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)

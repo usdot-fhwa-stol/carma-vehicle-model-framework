@@ -52,14 +52,14 @@ TEST(ConstraintChecker, constructor)
 
   MockParamServer mock_param_server;
 
-  EXPECT_CALL(mock_param_server, getParam("max_forward_speed", A(double&))).WillOnce(DoAll(Invoke(set_double_ref(A(double&), 20.0)), Return(true)));
-  EXPECT_CALL(mock_param_server, getParam("forward_acceleration_limit", A(double&))).WillOnce(DoAll(Invoke(set_double_ref(A(double&), 10.0)), Return(true)));
-  EXPECT_CALL(mock_param_server, getParam("forward_deceleration_limit", A(double&))).WillOnce(DoAll(Invoke(set_double_ref(A(double&), -10.0)), Return(true)));
-  EXPECT_CALL(mock_param_server, getParam("max_steering_angle", A(double&))).WillOnce(DoAll(Invoke(set_double_ref(A(double&), 180.0)), Return(true)));
-  EXPECT_CALL(mock_param_server, getParam("min_steering_angle", A(double&))).WillOnce(DoAll(Invoke(set_double_ref(A(double&), -180.0)), Return(true)));
-  EXPECT_CALL(mock_param_server, getParam("max_steering_angle_rate", A(double&))).WillOnce(DoAll(Invoke(set_double_ref(A(double&), 180.0)), Return(true)));
-  EXPECT_CALL(mock_param_server, getParam("max_trailer_angle", A(double&))).WillOnce(DoAll(Invoke(set_double_ref(A(double&), 180.0)), Return(true)));
-  EXPECT_CALL(mock_param_server, getParam("min_trailer_angle", A(double&))).WillOnce(DoAll(Invoke(set_double_ref(A(double&), -180.0)), Return(true)));
+  EXPECT_CALL(mock_param_server, getParam("max_forward_speed", A<double&>())).WillOnce(DoAll(Invoke(set_double_ref(A<double&>(), 20.0)), Return(true)));
+  EXPECT_CALL(mock_param_server, getParam("forward_acceleration_limit", A<double&>())).WillOnce(DoAll(Invoke(set_double_ref(A<double&>(), 10.0)), Return(true)));
+  EXPECT_CALL(mock_param_server, getParam("forward_deceleration_limit", A<double&>())).WillOnce(DoAll(Invoke(set_double_ref(A<double&>(), -10.0)), Return(true)));
+  EXPECT_CALL(mock_param_server, getParam("max_steering_angle", A<double&>())).WillOnce(DoAll(Invoke(set_double_ref(A<double&>(), 180.0)), Return(true)));
+  EXPECT_CALL(mock_param_server, getParam("min_steering_angle", A<double&>())).WillOnce(DoAll(Invoke(set_double_ref(A<double&>(), -180.0)), Return(true)));
+  EXPECT_CALL(mock_param_server, getParam("max_steering_angle_rate", A<double&>())).WillOnce(DoAll(Invoke(set_double_ref(A<double&>(), 180.0)), Return(true)));
+  EXPECT_CALL(mock_param_server, getParam("max_trailer_angle", A<double&>())).WillOnce(DoAll(Invoke(set_double_ref(A<double&>(), 180.0)), Return(true)));
+  EXPECT_CALL(mock_param_server, getParam("min_trailer_angle", A<double&>())).WillOnce(DoAll(Invoke(set_double_ref(A<double&>(), -180.0)), Return(true)));
 
   
   ConstraintChecker cc = new ConstraintChecker(parameter_server);

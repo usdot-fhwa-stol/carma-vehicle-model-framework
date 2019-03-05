@@ -59,9 +59,9 @@ class MockVehicleModel: public VehicleMotionModel
 
     void setParameterServer(std::shared_ptr<ParameterServer> parameter_server) override;
 
-    std::vector<VehicleState> predict(VehicleState initial_state,
+    std::vector<VehicleState> predict(const VehicleState& initial_state,
       double timestep, double delta_t) override; 
 
-    std::vector<VehicleState> predict(VehicleState initial_state,
-      std::vector<VehicleModelControlInput> control_inputs, double timestep) override;
+    std::vector<VehicleState> predict(const VehicleState& initial_state,
+      const std::vector<VehicleModelControlInput>& control_inputs, double timestep) override;
 };

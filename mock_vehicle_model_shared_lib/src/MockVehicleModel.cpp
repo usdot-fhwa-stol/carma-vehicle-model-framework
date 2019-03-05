@@ -33,18 +33,19 @@ void MockVehicleModel::setParameterServer(std::shared_ptr<ParameterServer> param
 
 std::vector<VehicleState> MockVehicleModel::predict(const VehicleState& initial_state,
   double timestep, double delta_t) {
-    
-    initial_state.x_pos += 5; // Update x pos to confirm data was processed
+    VehicleState vs;
+    vs.x_pos = initial_state.x_pos + 5;// Update x pos to confirm data was processed
     std::vector<VehicleState> states;
-    states.push_back(initial_state);
+    states.push_back(vs);
     return states;
   }
 
 std::vector<VehicleState> MockVehicleModel::predict(const VehicleState& initial_state,
   const std::vector<VehicleModelControlInput>& control_inputs, double timestep) {
 
-    initial_state.x_pos += 5; // Update x pos to confirm data was processed
+    VehicleState vs;
+    vs.x_pos = initial_state.x_pos + 5;// Update x pos to confirm data was processed
     std::vector<VehicleState> states;
-    states.push_back(initial_state);
+    states.push_back(vs);
     return states;
   }

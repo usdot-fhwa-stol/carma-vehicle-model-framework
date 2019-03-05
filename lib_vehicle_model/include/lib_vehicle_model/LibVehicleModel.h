@@ -59,11 +59,11 @@ namespace lib_vehicle_model {
   /**
    * @brief Function to unload the currently loaded model
    * 
-    * NOTE: Note this function is not required to be called for proper shutdown upon program completion.
-    * This should be used for special cases where the user is positive no other components still need the current model such as in unit testing
-    * 
-    */ 
-    void unload();
+   * NOTE: Note this function is not required to be called for proper shutdown upon program completion.
+   * This should be used for special cases where the user is positive no other components still need the current model such as in unit testing
+   * 
+   */ 
+  void unload();
 
   //
   // Functions matching the VehicleMotionModel interface
@@ -73,8 +73,8 @@ namespace lib_vehicle_model {
    * @brief Predict vehicle motion assuming no change in control input
    * 
    * @param initial_state The starting state of the vehicle
-   * @param timestep The time increment between returned traversed states
-   * @param delta_t The time to project the motion forward for
+   * @param timestep The time increment between returned traversed states. Unit: seconds
+   * @param delta_t The time to project the motion forward for. Unit: seconds
    * 
    * @return A list of traversed states seperated by the timestep
    * 
@@ -91,7 +91,7 @@ namespace lib_vehicle_model {
    * 
    * @param initial_state The starting state of the vehicle
    * @param control_inputs A list of control inputs seperated by the provided timestep
-   * @param timestep The time increment between returned traversed states and provided control inputs
+   * @param timestep The time increment between returned traversed states and provided control inputs. Unit: seconds
    * 
    * @return A list of traversed states seperated by the timestep
    * 

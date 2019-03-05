@@ -45,15 +45,9 @@ jobs:
             mkdir src
             cd src
             mkdir CARMAVehicleModelFramework
-            mkdir CARMAMsgs
       # Checkout PR branch
       - checkout:
           path: src/CARMAVehicleModelFramework
-      - run: 
-          name: Pull CARMAMsgs
-          command: |
-            source ${INIT_ENV}
-            git clone -b develop --depth 1 git@github.com:usdot-fhwa-stol/CARMAMsgs.git src/CARMAMsgs
       - run:
           name: Build CARMA
           command: |

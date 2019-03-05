@@ -26,11 +26,11 @@ namespace lib_vehicle_model {
   {
     switch( prop )
     {
-        case INITIAL_VELOCITY: os << "INITIAL_VELOCITY"; break;
-        case FINAL_VELOCITY: os << "FINAL_VELOCITY"; break;
-        case ACCELERATION: os << "ACCELERATION"; break;
-        case DISTANCE: os << "DISTANCE"; break;
-        case TIME: os << "TIME"; break;
+        case KinematicsProperty::INITIAL_VELOCITY: os << "INITIAL_VELOCITY"; break;
+        case KinematicsProperty::FINAL_VELOCITY: os << "FINAL_VELOCITY"; break;
+        case KinematicsProperty::ACCELERATION: os << "ACCELERATION"; break;
+        case KinematicsProperty::DISTANCE: os << "DISTANCE"; break;
+        case KinematicsProperty::TIME: os << "TIME"; break;
         default: os << "ERROR: UNKNOWN TYPE"; break;
     }
   }

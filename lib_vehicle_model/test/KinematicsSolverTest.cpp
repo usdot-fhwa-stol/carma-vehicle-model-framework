@@ -33,7 +33,6 @@ TEST(KinematicsSolver, solve)
   const double v_f = 21.16666666;
   const double error_bound = 0.0000001;
 
-
   // Solve for initial velocity
   // Find: v_i, Miss: v_f, Prop Order: a,d,t
   double v_i_result = KinematicsSolver::solve(KinematicsProperty::INITIAL_VELOCITY, KinematicsProperty::FINAL_VELOCITY, a,d,t);

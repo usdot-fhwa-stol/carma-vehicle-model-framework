@@ -27,7 +27,7 @@ namespace lib_vehicle_model {
    * For example d = 0.5*at^2 + v_0*t contains the properties distance, acceleration, initial velocity, and time, but not final velocity
    * 
    */
-  enum KinematicsProperty 
+  enum class KinematicsProperty 
   {
     INITIAL_VELOCITY,
     FINAL_VELOCITY,

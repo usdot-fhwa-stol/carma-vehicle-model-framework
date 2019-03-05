@@ -18,6 +18,7 @@
 #include <string>
 #include <dlfcn.h>
 #include <sstream>
+#include "lib_vehicle_model/LibVehicleModel.h"
 #include "lib_vehicle_model/ROSParameterServer.h"
 #include "ModelLoader.h"
 #include "ConstraintChecker.h"
@@ -50,7 +51,7 @@ namespace lib_vehicle_model {
     std::lock_guard<std::mutex> guard(init_mutex_); 
 
     if (modelLoaded_) {
-      throw std::runtime_error("Attempted to load the vehicle model a second time from the same process");
+      throw ModelAccessException("Attempted to load the vehicle model a second time from the same process");
     }
 
     // Load Parameters
@@ -59,7 +60,6 @@ namespace lib_vehicle_model {
 
     // Check if all the required parameters could be loaded
     if (!pathParam) {
-      // // Reset shared pointers since init was not completed
       // Throw exception
       throw std::invalid_argument("The vehicle path param vehicle_model_lib_path could not be found or read");
     }
@@ -97,7 +97,7 @@ namespace lib_vehicle_model {
     double timestep, double delta_t) {
       
       if (!modelLoaded_) {
-        throw std::runtime_error("Attempted to use lib_vehicle_model::predict before model was loaded with call to lib_vehicle_model::init()");
+        throw ModelAccessException("Attempted to use lib_vehicle_model::predict before model was loaded with call to lib_vehicle_model::init()");
       }
       
       // Validate inputs
@@ -116,7 +116,7 @@ namespace lib_vehicle_model {
     const std::vector<VehicleModelControlInput>& control_inputs, double timestep) {
 
       if (!modelLoaded_) {
-        throw std::runtime_error("Attempted to use lib_vehicle_model::predict before model was loaded with call to lib_vehicle_model::init()");
+        throw ModelAccessException("Attempted to use lib_vehicle_model::predict before model was loaded with call to lib_vehicle_model::init()");
       }
 
       // Validate inputs

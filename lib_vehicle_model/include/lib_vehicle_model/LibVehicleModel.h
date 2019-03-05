@@ -16,8 +16,9 @@
  */
 
 #include <memory>
-#include <exception>
+#include <stdexcept>
 #include <ros/ros.h>
+#include "ModelAccessException.h"
 #include "VehicleState.h"
 #include "VehicleMotionModel.h"
 #include "VehicleModelControlInput.h"
@@ -39,7 +40,7 @@ namespace lib_vehicle_model {
    * @param nh A pointer to the node handle which will be used to initialize the ROSParameterServer
    * 
    * @throws std::invalid_argument If the model could not be loaded or parameters could not be read
-   * @throws std::runtime_error If this function is called more than once within the same process execution
+   * @throws ModelAccessException If this function is called more than once within the same process execution
    * 
    */ 
   void init(std::shared_ptr<ros::NodeHandle> nh);
@@ -50,7 +51,7 @@ namespace lib_vehicle_model {
    * @param parameter_server A reference to the parameter server which vehicle models will use to load parameters
    * 
    * @throws std::invalid_argument If the model could not be loaded or parameters could not be read
-   * @throws std::runtime_error If this function is called more than once within the same process execution
+   * @throws ModelAccessException If this function is called more than once within the same process execution
    * 
    */ 
   void init(std::shared_ptr<ParameterServer> parameter_server);
@@ -77,7 +78,7 @@ namespace lib_vehicle_model {
    * 
    * @return A list of traversed states seperated by the timestep
    * 
-   * @throws std::runtime_error If this function is called before the init() function
+   * @throws ModelAccessException If this function is called before the init() function
    * 
    * NOTE: This function header must match a predict function found in the VehicleMotionModel interface
    * 
@@ -94,7 +95,7 @@ namespace lib_vehicle_model {
    * 
    * @return A list of traversed states seperated by the timestep
    * 
-   * @throws std::runtime_error If this function is called before the init() function
+   * @throws ModelAccessException If this function is called before the init() function
    * 
    * NOTE: This function header must match a predict function found in the VehicleMotionModel interface
    * 

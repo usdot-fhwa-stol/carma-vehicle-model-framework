@@ -27,9 +27,11 @@ int MockVehicleModelUser::run() {
     ROS_INFO_STREAM("Before init");
     initialize();
     goodInit = true;
-  }
-  catch(const std::exception& e) {
-    ROS_ERROR_STREAM("Failed to initialize node with exception: " << e.what());
+  } catch(const std::invalid_argument& e) {
+    ROS_ERROR_STREAM("Failed to initialize node with invalid_argument exception: " << e.what());
+    return -6;
+  } catch(const lib_vehicle_model::ModelAccessException& e) {
+    ROS_ERROR_STREAM("Failed to initialize node with ModelAccessException exception: " << e.what());
     return -6;
   }
 

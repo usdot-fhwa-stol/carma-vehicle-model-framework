@@ -126,6 +126,7 @@ add_library(${PROJECT_NAME}
   src/${PROJECT_NAME}/ModelLoader.cpp
   src/${PROJECT_NAME}/ConstraintChecker.cpp
   src/${PROJECT_NAME}/KinematicsProperty.cpp
+  src/${PROJECT_NAME}/ModelAccessException.cpp
 )
 add_dependencies( ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 

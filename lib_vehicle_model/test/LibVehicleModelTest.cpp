@@ -20,6 +20,7 @@
 #include "lib_vehicle_model/LibVehicleModel.h"
 #include "lib_vehicle_model/VehicleState.h"
 #include "lib_vehicle_model/ParameterServer.h"
+#include "lib_vehicle_model/ModelAccessException.h"
 
 /**
  * This file unit tests the ConstraintChecker checker class
@@ -98,7 +99,7 @@ TEST(lib_vehicle_model, init)
   ASSERT_NO_THROW(lib_vehicle_model::init(mock_param_server));
 
   // Try loading the model a second time
-  ASSERT_THROW(lib_vehicle_model::init(mock_param_server), std::runtime_error);
+  ASSERT_THROW(lib_vehicle_model::init(mock_param_server), lib_vehicle_model::ModelAccessException);
 
   // Ensure the shared pointer for parameter server has been correctly set
   // Ref 1 - Test function scope
@@ -144,7 +145,7 @@ TEST(lib_vehicle_model, predict_no_control)
   // Test predict function exception before model load
   VehicleState vs; // All values default to 0
 
-  ASSERT_THROW(lib_vehicle_model::predict(vs, 0.1, 1.0), std::runtime_error);
+  ASSERT_THROW(lib_vehicle_model::predict(vs, 0.1, 1.0), lib_vehicle_model::ModelAccessException);
 
   // Try loading a valid model
   ASSERT_NO_THROW(lib_vehicle_model::init(mock_param_server));
@@ -202,7 +203,7 @@ TEST(lib_vehicle_model, predict_with_control)
   inputs.push_back(ci);
   inputs.push_back(ci);
 
-  ASSERT_THROW(lib_vehicle_model::predict(vs, inputs, 0.1), std::runtime_error);
+  ASSERT_THROW(lib_vehicle_model::predict(vs, inputs, 0.1), lib_vehicle_model::ModelAccessException);
 
   // Try loading a valid model
   ASSERT_NO_THROW(lib_vehicle_model::init(mock_param_server));

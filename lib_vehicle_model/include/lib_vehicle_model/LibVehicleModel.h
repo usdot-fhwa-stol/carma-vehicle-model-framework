@@ -76,7 +76,7 @@ namespace lib_vehicle_model {
    * @param timestep The time increment between returned traversed states. Unit: seconds
    * @param delta_t The time to project the motion forward for. Unit: seconds
    * 
-   * @return A list of traversed states seperated by the timestep
+   * @return A list of traversed states seperated by the timestep excluding the initial state
    * 
    * @throws ModelAccessException If this function is called before the init() function
    * 
@@ -90,10 +90,10 @@ namespace lib_vehicle_model {
    * @brief Predict vehicle motion given a starting state and list of control inputs
    * 
    * @param initial_state The starting state of the vehicle
-   * @param control_inputs A list of control inputs seperated by the provided timestep
+   * @param control_inputs A list of control inputs seperated by the provided timestep 
    * @param timestep The time increment between returned traversed states and provided control inputs. Unit: seconds
    * 
-   * @return A list of traversed states seperated by the timestep
+   * @return A list of traversed states seperated by the timestep excluding the initial state
    * 
    * @throws ModelAccessException If this function is called before the init() function
    * 

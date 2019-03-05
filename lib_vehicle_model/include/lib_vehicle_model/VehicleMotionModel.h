@@ -41,7 +41,7 @@ namespace lib_vehicle_model {
        * @param timestep The time increment between returned traversed states
        * @param delta_t The time to project the motion forward for
        * 
-       * @return A list of traversed states seperated by the timestep
+       * @return A list of traversed states seperated by the timestep excluding the initial state
        * 
        */
       virtual std::vector<VehicleState> predict(const VehicleState& initial_state,
@@ -54,7 +54,7 @@ namespace lib_vehicle_model {
        * @param control_inputs A list of control inputs seperated by the provided timestep
        * @param timestep The time increment between returned traversed states and provided control inputs
        * 
-       * @return A list of traversed states seperated by the timestep
+       * @return A list of traversed states seperated by the timestep excluding the initial state
        * 
        */
       virtual std::vector<VehicleState> predict(const VehicleState& initial_state,

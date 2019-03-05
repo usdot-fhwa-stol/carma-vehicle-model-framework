@@ -82,7 +82,7 @@ namespace lib_vehicle_model {
    * NOTE: This function header must match a predict function found in the VehicleMotionModel interface
    * 
    */
-  std::vector<VehicleState> predict(VehicleState initial_state,
+  std::vector<VehicleState> predict(const VehicleState& initial_state,
     double timestep, double delta_t); 
 
   /**
@@ -99,6 +99,6 @@ namespace lib_vehicle_model {
    * NOTE: This function header must match a predict function found in the VehicleMotionModel interface
    * 
    */
-  std::vector<VehicleState> predict(VehicleState initial_state,
-    std::vector<VehicleModelControlInput> control_inputs, double timestep);
+  std::vector<VehicleState> predict(const VehicleState& initial_state,
+    const std::vector<VehicleModelControlInput>& control_inputs, double timestep);
 }

@@ -24,9 +24,7 @@
 using namespace lib_vehicle_model;
 
 // Constructor initializes NodeHandle
-ROSParameterServer::ROSParameterServer(std::shared_ptr<ros::NodeHandle> nh) {
-  nh_ = nh;
-}
+ROSParameterServer::ROSParameterServer(std::shared_ptr<ros::NodeHandle> nh): nh_(nh) {}
 
 ROSParameterServer::~ROSParameterServer() {};
 

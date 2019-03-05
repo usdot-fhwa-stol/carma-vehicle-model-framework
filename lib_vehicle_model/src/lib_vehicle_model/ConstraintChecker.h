@@ -35,11 +35,8 @@ namespace lib_vehicle_model {
     private:
       // Constraints
       double max_forward_speed_;
-      double max_reverse_speed_;
       double forward_acceleration_limit_;
       double forward_deceleration_limit_;
-      double reverse_acceleration_limit_;
-      double reverse_deceleration_limit_;
       double max_steering_angle_;
       double min_steering_angle_;
       double max_steering_angle_rate_;
@@ -47,7 +44,7 @@ namespace lib_vehicle_model {
       double min_trailer_angle_;
 
     public:
-      ConstraintChecker(std::shared_ptr<ParameterServer> parameter_server);
+      explicit ConstraintChecker(std::shared_ptr<ParameterServer> parameter_server);
 
       /**
        * @brief Helper function to validate the initial vehicle state for a motion prediction

@@ -93,7 +93,7 @@ namespace lib_vehicle_model {
     }
   }
 
-  std::vector<VehicleState> predict(VehicleState initial_state,
+  std::vector<VehicleState> predict(const VehicleState& initial_state,
     double timestep, double delta_t) {
       
       if (!modelLoaded_) {
@@ -112,8 +112,8 @@ namespace lib_vehicle_model {
       return vehicle_model_->predict(initial_state, timestep, delta_t);
     }
 
-  std::vector<VehicleState> predict(VehicleState initial_state,
-    std::vector<VehicleModelControlInput> control_inputs, double timestep) {
+  std::vector<VehicleState> predict(const VehicleState& initial_state,
+    const std::vector<VehicleModelControlInput>& control_inputs, double timestep) {
 
       if (!modelLoaded_) {
         throw std::runtime_error("Attempted to use lib_vehicle_model::predict before model was loaded with call to lib_vehicle_model::init()");

@@ -44,7 +44,7 @@ namespace lib_vehicle_model {
        * @return A list of traversed states seperated by the timestep
        * 
        */
-      virtual std::vector<VehicleState> predict(VehicleState initial_state,
+      virtual std::vector<VehicleState> predict(const VehicleState& initial_state,
         double timestep, double delta_t) = 0; // Defined as pure virtual function
 
       /**
@@ -57,8 +57,8 @@ namespace lib_vehicle_model {
        * @return A list of traversed states seperated by the timestep
        * 
        */
-      virtual std::vector<VehicleState> predict(VehicleState initial_state,
-        std::vector<VehicleModelControlInput> control_inputs, double timestep) = 0; // Defined as pure virtual function
+      virtual std::vector<VehicleState> predict(const VehicleState& initial_state,
+        const std::vector<VehicleModelControlInput>& control_inputs, double timestep) = 0; // Defined as pure virtual function
 
       /**
        * @brief Set the parameter server which will be used by vehicle models

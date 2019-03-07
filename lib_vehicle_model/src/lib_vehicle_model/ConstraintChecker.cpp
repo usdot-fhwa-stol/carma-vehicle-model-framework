@@ -55,7 +55,7 @@ ConstraintChecker::ConstraintChecker(std::shared_ptr<ParameterServer> parameter_
   }
 }
 
-void ConstraintChecker::validateInitialState(const VehicleState& initial_state) {
+void ConstraintChecker::validateInitialState(const VehicleState& initial_state) const {
   std::ostringstream msg;
 
   if ((abs(initial_state.x_vel) + abs(initial_state.y_vel)) > max_forward_speed_) {
@@ -85,7 +85,7 @@ void ConstraintChecker::validateInitialState(const VehicleState& initial_state) 
 
 } 
 
-void ConstraintChecker::validateControlInputs(const VehicleState& initial_state, const std::vector<VehicleModelControlInput>& control_inputs, const double timestep) {
+void ConstraintChecker::validateControlInputs(const VehicleState& initial_state, const std::vector<VehicleModelControlInput>& control_inputs, const double timestep) const {
 
   // Last steering angle used to compute rate of steering angle change between control inputs
   double last_steer_angle = initial_state.steering_angle;

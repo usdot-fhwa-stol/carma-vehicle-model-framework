@@ -53,7 +53,7 @@ namespace lib_vehicle_model {
        * 
        * @throws std::invalid_argument If the initial vehicle state is found to be invalid
        */
-      void validateInitialState(const VehicleState& initial_state);  
+      void validateInitialState(const VehicleState& initial_state) const;  
 
       /**
        * @brief Helper function to validate the control inputs for a motion prediction
@@ -64,6 +64,6 @@ namespace lib_vehicle_model {
        * 
        * @throws std::invalid_argument If the initial control inputs are found to be invalid
        */
-      void validateControlInputs(const VehicleState& initial_state, const std::vector<VehicleModelControlInput>& control_inputs, const double timestep); 
+      void validateControlInputs(const VehicleState& initial_state, const std::vector<VehicleModelControlInput>& control_inputs, const double timestep) const; 
   };
 }

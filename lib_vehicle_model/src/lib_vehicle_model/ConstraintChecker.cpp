@@ -58,18 +58,8 @@ ConstraintChecker::ConstraintChecker(std::shared_ptr<ParameterServer> parameter_
 void ConstraintChecker::validateInitialState(const VehicleState& initial_state) {
   std::ostringstream msg;
 
-  if (abs(initial_state.x_vel) > max_forward_speed_) {
-    msg << "Invalid initial_state with x_vel: " << initial_state.x_vel << "  above max speed of: " << max_forward_speed_;
-    throw std::invalid_argument(msg.str());
-  }
-
-  if (abs(initial_state.y_vel) > max_forward_speed_) {
-    msg << "Invalid initial_state with y_vel: " << initial_state.y_vel << " above max speed of: " << max_forward_speed_;
-    throw std::invalid_argument(msg.str());
-  }
-
-  if (initial_state.steering_angle < min_steering_angle_) {
-    msg << "Invalid initial_state with steering angle: " << initial_state.steering_angle << " is below min of: " << min_steering_angle_;
+  if ((abs(initial_state.x_vel) + abs(initial_state.y_vel)) > max_forward_speed_) {
+    msg << "Invalid initial_state with x_vel: " << initial_state.x_vel << " and y_vel: " << initial_state.y_vel << "  resulting in total speed above max speed of: " << max_forward_speed_;
     throw std::invalid_argument(msg.str());
   }
 

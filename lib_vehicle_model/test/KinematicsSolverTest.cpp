@@ -103,3 +103,228 @@ TEST(KinematicsSolver, solve)
   t_result = KinematicsSolver::solve(KinematicsProperty::TIME, KinematicsProperty::DISTANCE, v_i,v_f,a);
   ASSERT_NEAR(t, t_result, error_bound);
 }
+
+
+
+/**
+ * Tests the exceptions thrown by the solve function of the KinematicsSolver
+ */ 
+TEST(KinematicsSolver, solve_exceptions)
+{
+  // Values 
+  const double d = 43.6;
+  const double a = 2.5;
+  const double t = 2.4;
+  const double v_i = 15.16666666;
+  const double v_f = 21.16666666;
+  const double error_bound = 0.0000001;
+
+  // Solve for initial velocity
+  // Find: v_i, Miss: v_f, Prop Order: a,d,t
+  // Negative d
+  double bad_val = -4.0;
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::INITIAL_VELOCITY, KinematicsProperty::FINAL_VELOCITY, a,bad_val,t), 
+    std::domain_error);
+  // Negative t
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::INITIAL_VELOCITY, KinematicsProperty::FINAL_VELOCITY, a,d,bad_val), 
+    std::domain_error);
+
+  
+  // Find: v_i, Miss: a,  Prop Order: v_f,d,t
+  // Negative v_f
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::INITIAL_VELOCITY, KinematicsProperty::ACCELERATION, bad_val,d,t), 
+    std::domain_error);
+  // Neg d
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::INITIAL_VELOCITY, KinematicsProperty::ACCELERATION, v_f,bad_val,t), 
+    std::domain_error);
+  // Neg t
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::INITIAL_VELOCITY, KinematicsProperty::ACCELERATION, v_f,d,bad_val), 
+    std::domain_error);
+
+  
+  // Find: v_i, Miss: d, Prop Order: v_f,a,t
+  // Neg v_f
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::INITIAL_VELOCITY, KinematicsProperty::DISTANCE, bad_val,a,t), 
+    std::domain_error);
+  // Neg t
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::INITIAL_VELOCITY, KinematicsProperty::DISTANCE, v_f,a,bad_val), 
+    std::domain_error);
+
+  // Find: v_i, Miss: t, Prop Order: v_f,a,d
+  // Neg v_f
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::INITIAL_VELOCITY, KinematicsProperty::TIME, bad_val,a,d), 
+    std::domain_error);
+  // Neg d
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::INITIAL_VELOCITY, KinematicsProperty::TIME, v_f,a,bad_val), 
+    std::domain_error);
+
+
+  // Solve for final velocity
+  // Find: v_f, Miss: v_i, Prop Order: a,d,t
+  // Neg d
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::FINAL_VELOCITY, KinematicsProperty::INITIAL_VELOCITY, a,bad_val,t), 
+    std::domain_error);
+  // Neg t
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::FINAL_VELOCITY, KinematicsProperty::INITIAL_VELOCITY, a,d,bad_val), 
+    std::domain_error);
+
+  // Find: v_f, Miss: a, Prop Order: v_i,d,t
+  // Neg v_i
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::FINAL_VELOCITY, KinematicsProperty::ACCELERATION, bad_val,d,t), 
+    std::domain_error);
+  // Neg d
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::FINAL_VELOCITY, KinematicsProperty::ACCELERATION, v_i,bad_val,t), 
+    std::domain_error);
+  // Neg t
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::FINAL_VELOCITY, KinematicsProperty::ACCELERATION, v_i,d,bad_val), 
+    std::domain_error);
+
+  // Find: v_f, Miss: d, Prop Order: v_i,a,t
+  // Neg v_i
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::FINAL_VELOCITY, KinematicsProperty::DISTANCE, bad_val,a,t), 
+    std::domain_error);
+  // Neg t
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::FINAL_VELOCITY, KinematicsProperty::DISTANCE, v_i,a,bad_val), 
+    std::domain_error);
+
+  // Find: v_f, Miss: t, Prop Order: v_i,a,d
+  // Neg v_i
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::FINAL_VELOCITY, KinematicsProperty::TIME, bad_val,a,d), 
+    std::domain_error);
+  // Neg d
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::FINAL_VELOCITY, KinematicsProperty::TIME, v_i,a,bad_val), 
+    std::domain_error);
+
+  // Solve for acceleration
+  // Find: a, Miss: v_i, Prop Order: v_f,d,t
+  // Neg v_f
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::ACCELERATION, KinematicsProperty::INITIAL_VELOCITY, bad_val,d,t), 
+    std::domain_error);
+  // Neg d
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::ACCELERATION, KinematicsProperty::INITIAL_VELOCITY, v_f,bad_val,t), 
+    std::domain_error);
+  // Neg t
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::ACCELERATION, KinematicsProperty::INITIAL_VELOCITY, v_f,d,bad_val), 
+    std::domain_error);
+
+  // Find: a, Miss: v_f, Prop Order: v_i,d,t
+  // Neg v_i
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::ACCELERATION, KinematicsProperty::FINAL_VELOCITY, bad_val,d,t), 
+    std::domain_error);
+  // Neg d
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::ACCELERATION, KinematicsProperty::FINAL_VELOCITY, v_i,bad_val,t), 
+    std::domain_error);
+  // Neg t
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::ACCELERATION, KinematicsProperty::FINAL_VELOCITY, v_i,d,bad_val), 
+    std::domain_error);
+
+  // Find: a, Miss: d, Prop Order: v_i,v_f,t
+  // Neg v_i
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::ACCELERATION, KinematicsProperty::DISTANCE, bad_val,v_f,t), 
+    std::domain_error);
+  // Neg v_f
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::ACCELERATION, KinematicsProperty::DISTANCE, v_i,bad_val,t), 
+    std::domain_error);
+  // Neg t
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::ACCELERATION, KinematicsProperty::DISTANCE, v_i,v_f,bad_val), 
+    std::domain_error);
+
+  // Find: a, Miss: t, Prop Order: v_i,v_f,d
+  // Neg v_i
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::ACCELERATION, KinematicsProperty::TIME, bad_val,v_f,d), 
+    std::domain_error);
+  // Neg v_f
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::ACCELERATION, KinematicsProperty::TIME, v_i,bad_val,d), 
+    std::domain_error);
+  // Neg d
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::ACCELERATION, KinematicsProperty::TIME, v_i,v_f,bad_val), 
+    std::domain_error);
+
+
+  // Solve for distance
+  // Find: d, Miss: v_i, Prop Order: v_f,a,t
+  // Neg v_i
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::DISTANCE, KinematicsProperty::INITIAL_VELOCITY, bad_val,a,t), 
+    std::domain_error);
+  // Neg t
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::DISTANCE, KinematicsProperty::INITIAL_VELOCITY, v_i,a,bad_val), 
+    std::domain_error);
+
+
+  // Find: d, Miss: v_f, Prop Order: v_i,a,t
+  // Neg v_i
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::DISTANCE, KinematicsProperty::FINAL_VELOCITY, bad_val,a,t), 
+    std::domain_error);
+  // Neg t
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::DISTANCE, KinematicsProperty::FINAL_VELOCITY, v_i,a,bad_val), 
+    std::domain_error);
+
+  // Find: d, Miss: a, Prop Order: v_i,v_f,t
+  // Neg v_i
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::DISTANCE, KinematicsProperty::ACCELERATION, bad_val,v_f,t), 
+    std::domain_error);
+  // Neg v_f
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::DISTANCE, KinematicsProperty::ACCELERATION, v_i,bad_val,t), 
+    std::domain_error);
+  // Neg t
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::DISTANCE, KinematicsProperty::ACCELERATION, v_i,v_f,bad_val), 
+    std::domain_error);
+
+  // Find: d, Miss: t, Prop Order: v_i,v_f,a
+  // Neg v_i
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::DISTANCE, KinematicsProperty::TIME, bad_val,v_f,a), 
+    std::domain_error);
+  // Neg v_f
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::DISTANCE, KinematicsProperty::TIME, v_i,bad_val,a), 
+    std::domain_error);
+  // Test bad accel vel mistmatch
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::DISTANCE, KinematicsProperty::TIME, 5,10,-10), 
+    std::domain_error);
+  ASSERT_NO_THROW(KinematicsSolver::solve(KinematicsProperty::DISTANCE, KinematicsProperty::TIME, 5,5,0));
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::DISTANCE, KinematicsProperty::TIME, 5,10,0), 
+    std::domain_error);
+
+  // Solve for time
+  // Find: t, Miss: v_i, Prop Order: v_f,a,d
+  // Neg v_f
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::TIME, KinematicsProperty::INITIAL_VELOCITY, bad_val,a,d), 
+    std::domain_error);
+  // Neg d
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::TIME, KinematicsProperty::INITIAL_VELOCITY, v_f,a,bad_val), 
+    std::domain_error);
+
+  // Find: t, Miss: v_f, Prop Order: v_i,a,d
+  // Neg v_i
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::TIME, KinematicsProperty::FINAL_VELOCITY, bad_val,a,d), 
+    std::domain_error);
+  // Neg d
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::TIME, KinematicsProperty::FINAL_VELOCITY, v_i,a,bad_val), 
+    std::domain_error);
+
+  // Find: t, Miss: a, Prop Order: v_i,v_f,d
+  // Neg v_i
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::TIME, KinematicsProperty::ACCELERATION, bad_val,v_f,d), 
+    std::domain_error);
+  // Neg v_f
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::TIME, KinematicsProperty::ACCELERATION, v_i,bad_val,d), 
+    std::domain_error);
+  // Neg d
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::TIME, KinematicsProperty::ACCELERATION, v_i,v_f,bad_val), 
+    std::domain_error);
+
+
+  // Find: t, Miss: d, Prop Order: v_i,v_f,a
+  // Neg v_i
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::TIME, KinematicsProperty::DISTANCE, bad_val,v_f,a), 
+    std::domain_error);
+  // Neg v_f
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::TIME, KinematicsProperty::DISTANCE, v_i,bad_val,a), 
+    std::domain_error);
+  // Test bad accel vel mistmatch
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::TIME, KinematicsProperty::DISTANCE, 5,10,-10), 
+    std::domain_error);
+  ASSERT_NO_THROW(KinematicsSolver::solve(KinematicsProperty::TIME, KinematicsProperty::DISTANCE, 5,5,0));
+  ASSERT_THROW(KinematicsSolver::solve(KinematicsProperty::TIME, KinematicsProperty::DISTANCE, 5,10,0), 
+    std::domain_error);
+  
+}

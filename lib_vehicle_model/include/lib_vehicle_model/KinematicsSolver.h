@@ -43,11 +43,16 @@ namespace lib_vehicle_model {
       * For example if solving the kinematic equation d = 0.5 a*t^2 + v_i*t
       * The function would be called as follows double distance = solve(DISTANCE,FINAL_VELOCITY,initial_velocity, acceleration, time);
       * 
+      * Only ACCELERATIONS can be negative all other values MUST be positive
+      * 
       * @param output_prop The property type would should be solved for
       * @param unavailable_prop The property type which is not provided
       * @param prop1 The first provided property
       * @param prop2 The second provided property
       * @param prop3 The third provided property
+      * 
+      * @throws std::domain_error if any input other than ACCELERATION is negative
+      * @throws std::domain_error if the sign of ACCELERATION does not match the provided change in velocity
       * 
       * @return The value of the output_prop which was solved for
       * 

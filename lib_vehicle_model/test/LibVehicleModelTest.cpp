@@ -76,7 +76,6 @@ TEST(lib_vehicle_model, init)
   ); // Initially return false to check param access
   
 
-  EXPECT_CALL(*mock_param_server, getParam("max_forward_speed", A<double&>())).WillRepeatedly(DoAll(set_double(20.0), Return(true)));
   EXPECT_CALL(*mock_param_server, getParam("forward_acceleration_limit", A<double&>())).WillRepeatedly(DoAll(set_double(10.0), Return(true)));
   EXPECT_CALL(*mock_param_server, getParam("forward_deceleration_limit", A<double&>())).WillRepeatedly(DoAll(set_double(-10.0), Return(true)));
   EXPECT_CALL(*mock_param_server, getParam("max_steering_angle", A<double&>())).WillRepeatedly(DoAll(set_double(180.0), Return(true)));
@@ -129,7 +128,6 @@ TEST(lib_vehicle_model, predict_no_control)
     .WillRepeatedly(DoAll(set_string(path), Return(true))
   ); 
 
-  EXPECT_CALL(*mock_param_server, getParam("max_forward_speed", A<double&>())).WillRepeatedly(DoAll(set_double(20.0), Return(true)));
   EXPECT_CALL(*mock_param_server, getParam("forward_acceleration_limit", A<double&>())).WillRepeatedly(DoAll(set_double(10.0), Return(true)));
   EXPECT_CALL(*mock_param_server, getParam("forward_deceleration_limit", A<double&>())).WillRepeatedly(DoAll(set_double(-10.0), Return(true)));
   EXPECT_CALL(*mock_param_server, getParam("max_steering_angle", A<double&>())).WillRepeatedly(DoAll(set_double(180.0), Return(true)));
@@ -183,7 +181,6 @@ TEST(lib_vehicle_model, predict_with_control)
     .WillRepeatedly(DoAll(set_string(path), Return(true))
   ); 
 
-  EXPECT_CALL(*mock_param_server, getParam("max_forward_speed", A<double&>())).WillRepeatedly(DoAll(set_double(20.0), Return(true)));
   EXPECT_CALL(*mock_param_server, getParam("forward_acceleration_limit", A<double&>())).WillRepeatedly(DoAll(set_double(10.0), Return(true)));
   EXPECT_CALL(*mock_param_server, getParam("forward_deceleration_limit", A<double&>())).WillRepeatedly(DoAll(set_double(-10.0), Return(true)));
   EXPECT_CALL(*mock_param_server, getParam("max_steering_angle", A<double&>())).WillRepeatedly(DoAll(set_double(180.0), Return(true)));

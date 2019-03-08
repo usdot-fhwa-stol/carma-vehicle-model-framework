@@ -27,7 +27,6 @@ using namespace lib_vehicle_model;
 ConstraintChecker::ConstraintChecker(std::shared_ptr<ParameterServer> parameter_server) {
 
   // Load Parameters
-  bool speedParam = parameter_server->getParam("max_forward_speed", max_forward_speed_); 
   bool accelParam = parameter_server->getParam("forward_acceleration_limit", forward_acceleration_limit_);
   bool decelParam = parameter_server->getParam("forward_deceleration_limit", forward_deceleration_limit_);
   bool maxSteerParam = parameter_server->getParam("max_steering_angle", max_steering_angle_);
@@ -37,12 +36,11 @@ ConstraintChecker::ConstraintChecker(std::shared_ptr<ParameterServer> parameter_
   bool minTrailerAngleParam = parameter_server->getParam("min_trailer_angle", min_trailer_angle_);
 
   // Check if all the required parameters could be loaded
-  if (!(speedParam && accelParam && decelParam && maxSteerParam && minSteerParam
+  if (!(accelParam && decelParam && maxSteerParam && minSteerParam
          && maxSteerRateParam && maxTrailerAngleParam && minTrailerAngleParam)) {
 
     std::ostringstream msg;
     msg << "One of the required parameters could not be found or read " 
-      << " max_forward_speed: " << speedParam 
       << " forward_acceleration_limit: " << accelParam 
       << " forward_deceleration_limit: " << decelParam 
       << " max_steering_angle: " << maxSteerParam 
@@ -57,11 +55,6 @@ ConstraintChecker::ConstraintChecker(std::shared_ptr<ParameterServer> parameter_
 
 void ConstraintChecker::validateInitialState(const VehicleState& initial_state) const {
   std::ostringstream msg;
-
-  if ((abs(initial_state.x_vel) + abs(initial_state.y_vel)) > max_forward_speed_) {
-    msg << "Invalid initial_state with x_vel: " << initial_state.x_vel << " and y_vel: " << initial_state.y_vel << "  resulting in total speed above max speed of: " << max_forward_speed_;
-    throw std::invalid_argument(msg.str());
-  }
 
   if (initial_state.steering_angle < min_steering_angle_) {
     msg << "Invalid initial_state with steering angle: " << initial_state.steering_angle << " is below min of: " << min_steering_angle_;

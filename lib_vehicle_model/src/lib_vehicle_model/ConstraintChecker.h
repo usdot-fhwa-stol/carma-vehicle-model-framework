@@ -34,7 +34,6 @@ namespace lib_vehicle_model {
   {
     private:
       // Constraints
-      double max_forward_speed_;
       double forward_acceleration_limit_;
       double forward_deceleration_limit_;
       double max_steering_angle_;

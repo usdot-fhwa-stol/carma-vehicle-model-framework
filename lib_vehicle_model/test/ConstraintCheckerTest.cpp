@@ -62,7 +62,6 @@ TEST(ConstraintChecker, constructor)
   // Test proper construction
   auto mock_param_server = std::make_shared<MockParamServer>();
 
-  EXPECT_CALL(*mock_param_server, getParam("max_forward_speed", A<double&>())).WillRepeatedly(DoAll(set_double(20.0), Return(true)));
   EXPECT_CALL(*mock_param_server, getParam("forward_acceleration_limit", A<double&>())).WillRepeatedly(DoAll(set_double(10.0), Return(true)));
   EXPECT_CALL(*mock_param_server, getParam("forward_deceleration_limit", A<double&>())).WillRepeatedly(DoAll(set_double(-10.0), Return(true)));
   EXPECT_CALL(*mock_param_server, getParam("max_steering_angle", A<double&>())).WillRepeatedly(DoAll(set_double(180.0), Return(true)));
@@ -76,9 +75,6 @@ TEST(ConstraintChecker, constructor)
 
 
   // Test failing construction
-  EXPECT_CALL(*mock_param_server, getParam("max_forward_speed", A<double&>())).WillRepeatedly(DoAll(set_double(20.0), Return(false)));
-
-  ASSERT_THROW(ConstraintChecker cc(mock_param_server), std::invalid_argument);
 
   EXPECT_CALL(*mock_param_server, getParam("forward_acceleration_limit", A<double&>())).WillRepeatedly(DoAll(set_double(10.0), Return(false)));
 
@@ -119,7 +115,6 @@ TEST(ConstraintChecker, validateInitialState)
   // Build constraint checker
   auto mock_param_server = std::make_shared<MockParamServer>();
 
-  EXPECT_CALL(*mock_param_server, getParam("max_forward_speed", A<double&>())).WillRepeatedly(DoAll(set_double(20.0), Return(true)));
   EXPECT_CALL(*mock_param_server, getParam("forward_acceleration_limit", A<double&>())).WillRepeatedly(DoAll(set_double(10.0), Return(true)));
   EXPECT_CALL(*mock_param_server, getParam("forward_deceleration_limit", A<double&>())).WillRepeatedly(DoAll(set_double(-10.0), Return(true)));
   EXPECT_CALL(*mock_param_server, getParam("max_steering_angle", A<double&>())).WillRepeatedly(DoAll(set_double(180.0), Return(true)));
@@ -152,15 +147,7 @@ TEST(ConstraintChecker, validateInitialState)
   vs.trailer_angle = -200.0;
   ASSERT_THROW(cc->validateInitialState(vs), std::invalid_argument);
 
-  vs.trailer_angle = 0.0; // Reset trailer angle so it doesn't interfere with speed check
-
-  vs.x_vel = 40.0;
-  ASSERT_THROW(cc->validateInitialState(vs), std::invalid_argument);
-
-  vs.x_vel = 0.0; // Reset x_vel so it doesn't interfere with y_vel check
-
-  vs.y_vel = 40.0;
-  ASSERT_THROW(cc->validateInitialState(vs), std::invalid_argument);
+  vs.trailer_angle = 0.0; // Reset trailer angle so it doesn't interfere with any future checks
 }
 
 /**
@@ -172,7 +159,6 @@ TEST(ConstraintChecker, validateControlInputs)
   // Build constraint checker
   auto mock_param_server = std::make_shared<MockParamServer>();
 
-  EXPECT_CALL(*mock_param_server, getParam("max_forward_speed", A<double&>())).WillRepeatedly(DoAll(set_double(20.0), Return(true)));
   EXPECT_CALL(*mock_param_server, getParam("forward_acceleration_limit", A<double&>())).WillRepeatedly(DoAll(set_double(10.0), Return(true)));
   EXPECT_CALL(*mock_param_server, getParam("forward_deceleration_limit", A<double&>())).WillRepeatedly(DoAll(set_double(-10.0), Return(true)));
   EXPECT_CALL(*mock_param_server, getParam("max_steering_angle", A<double&>())).WillRepeatedly(DoAll(set_double(180.0), Return(true)));

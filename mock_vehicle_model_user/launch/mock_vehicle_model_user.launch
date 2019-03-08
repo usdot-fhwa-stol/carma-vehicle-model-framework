@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<!--
+  Copyright (C) 2018-2019 LEIDOS.
+
+  Licensed under the Apache License, Version 2.0 (the "License"); you may not
+  use this file except in compliance with the License. You may obtain a copy of
+  the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+  License for the specific language governing permissions and limitations under
+  the License.
+-->
+
+<launch>
+    <!-- Vehicle Model Accessor Params -->
+    <arg name="vehicle_model_lib_path"     default="/opt/carma/install/lib/libmock_vehicle_model_shared_lib.so" doc="The path to the shared library which will be loaded as the host vehicle model"/>
+    <arg name="forward_acceleration_limit" default="10.0" doc="The maximum acceleration limit in m/s^2."/>
+    <arg name="forward_deceleration_limit" default="-10.0" doc="The maximum deceleration limit in m/s^2."/>
+    <arg name="max_steering_angle"         default="180.0" doc="The maximum steering angle relative to the vehicle center line in rad. Positive angles will be to the left of the vehicle centerline."/>
+    <arg name="min_steering_angle"         default="-180.0" doc="The minimum steering angle relative to the vehicle center line in rad. Positive angles will be to the left of the vehicle centerline."/>
+    <arg name="max_steering_angle_rate"    default="180.0" doc="The max steering angle changing rate in rad/s"/>
+    <arg name="max_trailer_angle"          default="180.0" doc="The maximum allowed angle of an attached trailer in rad. Positive angles will be to the left of the cab centerline"/>
+    <arg name="min_trailer_angle"          default="-180.0" doc="The minimum allowed angle of an attached trailer in rad. Positive angles will be to the left of the cab centerline"/>
+
+    <!-- Loaded Mock Vehicle Model Param -->
+    <arg name="example_param" default="20.0" doc="Example parameter to demonstrate connection to ros param server by shared lib"/>
+    
+    <!-- Convert Args to Params -->
+    <param name="vehicle_model_lib_path"     value="$(arg vehicle_model_lib_path)" />
+    <param name="forward_acceleration_limit" value="$(arg forward_acceleration_limit)" />
+    <param name="forward_deceleration_limit" value="$(arg forward_deceleration_limit)" />
+    <param name="max_steering_angle"         value="$(arg max_steering_angle)" />
+    <param name="min_steering_angle"         value="$(arg min_steering_angle)" />
+    <param name="max_steering_angle_rate"    value="$(arg max_steering_angle_rate)" />
+    <param name="max_trailer_angle"          value="$(arg max_trailer_angle)" />
+    <param name="min_trailer_angle"          value="$(arg min_trailer_angle)" />
+    <param name="example_param"              value="$(arg example_param)" />
+
+    <!-- Mock Vehicle Model User Node -->
+    <node pkg="mock_vehicle_model_user" type="mock_vehicle_model_user_node" name="mock_vehicle_model_user" output="screen"/>
+     
+</launch>

@@ -35,7 +35,6 @@ namespace lib_vehicle_model {
   //
   namespace {
     std::mutex init_mutex_; // Mutex for thread safety
-    std::shared_ptr<ParameterServer> param_server_;
     std::unique_ptr<VehicleMotionModel, ModelLoader::destroy_fnc_ptr> vehicle_model_(nullptr, nullptr);
     std::unique_ptr<ConstraintChecker> constraint_checker_;
     bool modelLoaded_ = false; // Flag indicating init has already been called
@@ -64,12 +63,11 @@ namespace lib_vehicle_model {
       throw std::invalid_argument("The vehicle path param vehicle_model_lib_path could not be found or read");
     }
 
-    param_server_ = parameter_server;
     constraint_checker_.reset(new ConstraintChecker(parameter_server));
 
     // Load the vehicle model to be used
     vehicle_model_ = ModelLoader::load(vehicle_model_lib_path);
-    vehicle_model_->setParameterServer(param_server_);
+    vehicle_model_->setParameterServer(parameter_server);
 
     // Set model loading flag
     modelLoaded_ = true;
@@ -88,7 +86,6 @@ namespace lib_vehicle_model {
     if (modelLoaded_) {
       vehicle_model_.reset(); // Release and call loaded lib destructor
       constraint_checker_.reset();
-      param_server_.reset();
       modelLoaded_ = false;
     }
   }

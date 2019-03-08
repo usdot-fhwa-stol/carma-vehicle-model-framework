@@ -103,9 +103,8 @@ TEST(lib_vehicle_model, init)
 
   // Ensure the shared pointer for parameter server has been correctly set
   // Ref 1 - Test function scope
-  // Ref 2 - lib_vehicle_model scope
-  // Ref 3 - Loaded vehicle model scope
-  ASSERT_EQ(3, mock_param_server.use_count());
+  // Ref 2 - Loaded vehicle model scope
+  ASSERT_EQ(2, mock_param_server.use_count());
   
   // Unload the vehicle model so we can run more tests
   lib_vehicle_model::unload();

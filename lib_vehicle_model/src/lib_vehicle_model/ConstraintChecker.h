@@ -34,8 +34,8 @@ namespace lib_vehicle_model {
   {
     private:
       // Constraints
-      double forward_acceleration_limit_;
-      double forward_deceleration_limit_;
+      double max_forward_speed_;
+      double min_forward_speed_;
       double max_steering_angle_;
       double min_steering_angle_;
       double max_steering_angle_rate_;
@@ -63,6 +63,6 @@ namespace lib_vehicle_model {
        * 
        * @throws std::invalid_argument If the initial control inputs are found to be invalid
        */
-      void validateControlInputs(const VehicleState& initial_state, const std::vector<VehicleModelControlInput>& control_inputs, const double timestep) const; 
+      void validateControlInputs(const VehicleState& initial_state, const std::vector<VehicleControlInput>& control_inputs, const double timestep) const; 
   };
 }

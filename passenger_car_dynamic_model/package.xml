@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package>
+  <name>passenger_car_dynamic_model</name>
+  <version>0.1.0</version>
+  <description>
+    This package provides a pluggable vehicle model for use with the lib_vehicle_model library in CARMA.
+    The model implemented in this package is a dynamics model based off tire properties and vehicle control transfer functions. 
+  </description>
+  <maintainer email="carma@todo.todo">carma</maintainer>
+  <license>Apache 2.0</license>
+  <author email="carma@todo.todo">carma</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>lib_vehicle_model</build_depend>
+  <build_depend>ompl</build_depend>
+  <run_depend>lib_vehicle_model</run_depend>
+  <build_depend>ompl</build_depend>
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <!-- Other tools can request additional information be placed here -->
+
+  </export>
+</package>

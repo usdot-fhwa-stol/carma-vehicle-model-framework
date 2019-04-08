@@ -20,7 +20,7 @@
 #include <memory>
 #include <lib_vehicle_model/VehicleState.h>
 #include <lib_vehicle_model/VehicleMotionModel.h>
-#include <lib_vehicle_model/VehicleModelControlInput.h>
+#include <lib_vehicle_model/VehicleControlInput.h>
 #include <lib_vehicle_model/ParameterServer.h>
 
 using namespace lib_vehicle_model;
@@ -63,5 +63,5 @@ class MockVehicleModel: public VehicleMotionModel
       double timestep, double delta_t) override; 
 
     std::vector<VehicleState> predict(const VehicleState& initial_state,
-      const std::vector<VehicleModelControlInput>& control_inputs, double timestep) override;
+      const std::vector<VehicleControlInput>& control_inputs, double timestep) override;
 };

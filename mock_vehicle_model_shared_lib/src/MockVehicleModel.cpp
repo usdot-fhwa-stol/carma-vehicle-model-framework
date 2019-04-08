@@ -41,7 +41,7 @@ std::vector<VehicleState> MockVehicleModel::predict(const VehicleState& initial_
   }
 
 std::vector<VehicleState> MockVehicleModel::predict(const VehicleState& initial_state,
-  const std::vector<VehicleModelControlInput>& control_inputs, double timestep) {
+  const std::vector<VehicleControlInput>& control_inputs, double timestep) {
 
     VehicleState vs;
     vs.x_pos = initial_state.x_pos + 5;// Update x pos to confirm data was processed

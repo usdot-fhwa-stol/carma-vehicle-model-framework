@@ -18,8 +18,8 @@
 <launch>
     <!-- Vehicle Model Accessor Params -->
     <arg name="vehicle_model_lib_path"     default="/opt/carma/install/lib/libmock_vehicle_model_shared_lib.so" doc="The path to the shared library which will be loaded as the host vehicle model"/>
-    <arg name="forward_acceleration_limit" default="10.0" doc="The maximum acceleration limit in m/s^2."/>
-    <arg name="forward_deceleration_limit" default="-10.0" doc="The maximum deceleration limit in m/s^2."/>
+    <arg name="max_forward_speed"          default="10.0" doc="The maximum forward speed in m/s"/>
+    <arg name="min_forward_speed"          default="0.0" doc="The minimum forward speed in m/s"/>
     <arg name="max_steering_angle"         default="180.0" doc="The maximum steering angle relative to the vehicle center line in rad. Positive angles will be to the left of the vehicle centerline."/>
     <arg name="min_steering_angle"         default="-180.0" doc="The minimum steering angle relative to the vehicle center line in rad. Positive angles will be to the left of the vehicle centerline."/>
     <arg name="max_steering_angle_rate"    default="180.0" doc="The max steering angle changing rate in rad/s"/>
@@ -30,15 +30,15 @@
     <arg name="example_param" default="20.0" doc="Example parameter to demonstrate connection to ros param server by shared lib"/>
     
     <!-- Convert Args to Params -->
-    <param name="vehicle_model_lib_path"     value="$(arg vehicle_model_lib_path)" />
-    <param name="forward_acceleration_limit" value="$(arg forward_acceleration_limit)" />
-    <param name="forward_deceleration_limit" value="$(arg forward_deceleration_limit)" />
-    <param name="max_steering_angle"         value="$(arg max_steering_angle)" />
-    <param name="min_steering_angle"         value="$(arg min_steering_angle)" />
-    <param name="max_steering_angle_rate"    value="$(arg max_steering_angle_rate)" />
-    <param name="max_trailer_angle"          value="$(arg max_trailer_angle)" />
-    <param name="min_trailer_angle"          value="$(arg min_trailer_angle)" />
-    <param name="example_param"              value="$(arg example_param)" />
+    <param name = "vehicle_model_lib_path"     value = "$(arg vehicle_model_lib_path)" />
+    <param name = "max_forward_speed"          value = "$(arg max_forward_speed)" />
+    <param name = "min_forward_speed"          value = "$(arg min_forward_speed)" />
+    <param name = "max_steering_angle"         value = "$(arg max_steering_angle)" />
+    <param name = "min_steering_angle"         value = "$(arg min_steering_angle)" />
+    <param name = "max_steering_angle_rate"    value = "$(arg max_steering_angle_rate)" />
+    <param name = "max_trailer_angle"          value = "$(arg max_trailer_angle)" />
+    <param name = "min_trailer_angle"          value = "$(arg min_trailer_angle)" />
+    <param name = "example_param"              value = "$(arg example_param)" />
 
     <!-- Mock Vehicle Model User Node -->
     <node pkg="mock_vehicle_model_user" type="mock_vehicle_model_user_node" name="mock_vehicle_model_user" output="screen"/>

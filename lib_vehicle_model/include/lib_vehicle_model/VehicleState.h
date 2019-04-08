@@ -15,6 +15,8 @@
  * the License.
  */
 
+#include <sstream>
+
 namespace lib_vehicle_model {
   /**
    * @struct VehicleState

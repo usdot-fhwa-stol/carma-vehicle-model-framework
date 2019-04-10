@@ -79,6 +79,7 @@ namespace lib_vehicle_model {
    * @return A list of traversed states seperated by the timestep excluding the initial state
    * 
    * @throws ModelAccessException If this function is called before the init() function
+   * @throws std::invalid_argument If the initial vehicle state is found to be invalid
    * 
    * NOTE: This function header must match a predict function found in the VehicleMotionModel interface
    * 
@@ -96,6 +97,7 @@ namespace lib_vehicle_model {
    * @return A list of traversed states seperated by the timestep excluding the initial state
    * 
    * @throws ModelAccessException If this function is called before the init() function
+   * @throws std::invalid_argument If the initial vehicle state or control inputs are found to be invalid
    * 
    * NOTE: This function header must match a predict function found in the VehicleMotionModel interface
    * 

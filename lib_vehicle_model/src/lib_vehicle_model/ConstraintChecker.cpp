@@ -80,11 +80,18 @@ void ConstraintChecker::validateInitialState(const VehicleState& initial_state) 
 
 void ConstraintChecker::validateControlInputs(const VehicleState& initial_state, const std::vector<VehicleControlInput>& control_inputs, const double timestep) const {
 
+  std::ostringstream msg;
+
+  // Check we were given some control inputs
+  if (control_inputs.size() == 0) {
+     msg << "Invalid control_inputs: empty vector provided as control inputs";
+     throw std::invalid_argument(msg.str());
+  }
+
   // Last steering angle used to compute rate of steering angle change between control inputs
   double last_steer_angle = initial_state.steering_angle;
 
   size_t count = 0;
-  std::ostringstream msg;
   // Validate each control input in sequence
   for (const VehicleControlInput& control : control_inputs) {
 

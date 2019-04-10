@@ -28,14 +28,17 @@ namespace lib_vehicle_model {
   {
     /**
      * 2d x-axis position of the vehicle center of gravity in meters
+     * This position is in a fixed inertial frame which vehicle motion is described in
      */ 
     double X_pos_global = 0;
     /**
      * 2d y-axis position of the vehicle center of gravity in meters
+     * This position is in a fixed inertial frame which vehicle motion is described in
      */ 
     double Y_pos_global = 0;
     /**
      * The orientation of the vehicle's longitudinal axis in radians
+     * This orientation is in a fixed inertial frame which vehicle motion is described in
      */ 
     double orientation = 0;
     /**

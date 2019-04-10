@@ -30,21 +30,21 @@ namespace lib_vehicle_model {
       template<class C>
       struct ODEFunctor
       {
-        const ODEFunction<C> ode_func_;
-        C control_;
+        const ODEFunction<C> ode_function;
+        C control_input;
 
-        ODEFunctor(const ODEFunction<C>& ode_func) : ode_func_(std::move(ode_func))
+        ODEFunctor(const ODEFunction<C>& ode_func) : ode_function(std::move(ode_func))
         {}
 
         void setControl(const C& control) {
-          control_ = control;
+          control_input = control;
         }
 
 
         // Callback for ode function
         void operator()(const State& current, StateDot& output, double t)
         {
-            ode_func_(current, control_, output, t);
+            ode_function(current, control_input, output, t);
         }
       };
 
@@ -52,17 +52,17 @@ namespace lib_vehicle_model {
       template<class C>
       struct PostStepFunctor
       {
-        const PostStepFunction<C> post_step_func_;
-        const std::vector<C>& controls_;
-        const State& initial_state_;
-        std::vector<std::tuple<double, State>>& output_vec_;
-        ODEFunctor<C>& ode_functor_;
+        const PostStepFunction<C> post_step_function;
+        const std::vector<C>& control_inputs;
+        const State& starting_state;
+        std::vector<std::tuple<double, State>>& outputs;
+        ODEFunctor<C>& ode_functor_obj;
 
 
         PostStepFunctor(const PostStepFunction<C>& post_step_func, ODEFunctor<C>& ode_functor, const std::vector<C>& controls, const State& initial_state, std::vector<std::tuple<double, State>>& output_vec) :  
-          post_step_func_(std::move(post_step_func)), ode_functor_(ode_functor), controls_(controls), initial_state_(initial_state), output_vec_(output_vec)
+          post_step_function(std::move(post_step_func)), ode_functor_obj(ode_functor), control_inputs(controls), starting_state(initial_state), outputs(output_vec)
         {
-          ode_functor_.setControl(controls[0]); // Set initial control
+          ode_functor_obj.setControl(controls[0]); // Set initial control
         }
 
         // Callback for ode observer during integration
@@ -76,14 +76,14 @@ namespace lib_vehicle_model {
           // Call the post step function
           State updated_state;
 
-          post_step_func_(current, controls_[output_vec_.size()], t, initial_state_, updated_state);
+          post_step_function(current, control_inputs[outputs.size()], t, starting_state, updated_state);
 
           // Set the final output
-          output_vec_.push_back(std::tuple<double,State>(t, updated_state));
+          outputs.push_back(std::tuple<double,State>(t, updated_state));
 
           // Update the control value for the next step
-          if (controls_.size() > output_vec_.size()) {
-            ode_functor_.setControl(controls_[output_vec_.size()]); // Update the control input
+          if (control_inputs.size() > outputs.size()) {
+            ode_functor_obj.setControl(control_inputs[outputs.size()]); // Update the control input
           }
         }
       };

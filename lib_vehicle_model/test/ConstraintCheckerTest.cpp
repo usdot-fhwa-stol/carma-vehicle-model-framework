@@ -211,4 +211,7 @@ TEST(ConstraintChecker, validateControlInputs)
   inputs.push_back(ci_bad);
   ASSERT_THROW(cc->validateControlInputs(vs, inputs, timestep), std::invalid_argument);
   inputs.pop_back();
+
+  std::vector<VehicleControlInput> inputs_empty;
+  ASSERT_THROW(cc->validateControlInputs(vs, inputs_empty, timestep), std::invalid_argument);
 }

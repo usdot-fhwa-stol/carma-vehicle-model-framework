@@ -27,13 +27,13 @@ namespace lib_vehicle_model {
   namespace ODESolver {
     
     /**
-     * @brief Typedef for ODE State vectors
+     * @brief Type alias for ODE State vectors
      */ 
-    typedef std::vector<double> State;
+    using State = std::vector<double>;
     /**
-     * @brief Typedef for ODE State derivative vectors
+     * @brief Type alias for ODE State derivative vectors
      */ 
-    typedef std::vector<double> StateDot;
+    using StateDot = std::vector<double>;
 
     /**
      * @brief Type alias for a function which describes the first order ODEs
@@ -55,9 +55,10 @@ namespace lib_vehicle_model {
      * 
      * @tparam C The data type of the control variable
      *  
-     * @param state The vector of values which define the initial state. Each element of this state must match an element of the state_dot vector
+     * @param current The vector of values which define the initial state. Each element of this state must match an element of the state_dot vector
      * @param control A control object whose contents will be treated as constants during a step of integration
      * @param t The value of the independant variable which the derivatives are derived against such as dx/dt.
+     * @param initial_state The initial state of the whole integration process
      * @param output The updated state vector which will be stored in the final integration output
      */
     template<typename C>
@@ -71,9 +72,9 @@ namespace lib_vehicle_model {
      * @param num_steps The number of samples which will be returned. 
      * @param step_size The step size between independant variable samples of the ODE. 
      * @param initial_state The vector of values which define the initial state. The initial condition is defined as (0, initial_state).
-     * @param state_size The number of elements in the initial_state vector
-     * @param control A control object whose contents will be treated as constants during integration
+     * @param controls A list of controls which will be applied as a constant during each integration step. If the list is shorter than the integration size the last element will be used for the remainder of the integration
      * @param output A list of output states seperated by step_size with an added length equal to num_steps. Elements of the list are tuples of (independant variable, state)
+     * @param post_step_fun A function which will be called after each integration step. This function can be used to set state variables which are not being considered during integration
      */
 
     template<typename C>

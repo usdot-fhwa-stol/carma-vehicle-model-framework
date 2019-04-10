@@ -16,7 +16,7 @@
  */
 
 #include "ParameterServer.h"
-#include "VehicleModelControlInput.h"
+#include "VehicleControlInput.h"
 #include "VehicleState.h"
 
 namespace lib_vehicle_model {
@@ -58,7 +58,7 @@ namespace lib_vehicle_model {
        * 
        */
       virtual std::vector<VehicleState> predict(const VehicleState& initial_state,
-        const std::vector<VehicleModelControlInput>& control_inputs, double timestep) = 0; // Defined as pure virtual function
+        const std::vector<VehicleControlInput>& control_inputs, double timestep) = 0; // Defined as pure virtual function
 
       /**
        * @brief Set the parameter server which will be used by vehicle models

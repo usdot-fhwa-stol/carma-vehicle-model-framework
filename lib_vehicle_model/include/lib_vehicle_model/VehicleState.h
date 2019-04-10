@@ -15,6 +15,8 @@
  * the License.
  */
 
+#include <sstream>
+
 namespace lib_vehicle_model {
   /**
    * @struct VehicleState
@@ -26,47 +28,77 @@ namespace lib_vehicle_model {
   {
     /**
      * 2d x-axis position of the vehicle center of gravity in meters
+     * This position is in a fixed inertial frame which vehicle motion is described in
      */ 
-    double x_pos;
+    double X_pos_global = 0;
     /**
      * 2d y-axis position of the vehicle center of gravity in meters
+     * This position is in a fixed inertial frame which vehicle motion is described in
      */ 
-    double y_pos;
+    double Y_pos_global = 0;
     /**
-     * 2d x-axis velocity of the vehicle center of gravity in m/s
+     * The orientation of the vehicle's longitudinal axis in radians
+     * This orientation is in a fixed inertial frame which vehicle motion is described in
      */ 
-    double x_vel;
+    double orientation = 0;
     /**
-     * 2d y-axis velocity of the vehicle center of gravity in m/s
+     * longitudinal velocity of the vehicle center of gravity in m/s in its body frame
      */ 
-    double y_vel;
+    double longitudinal_vel = 0;
     /**
-     * 2d x-axis acceleration of the vehicle center of gravity in m/s^2
+     * lateral velocity of the vehicle center of gravity in m/s in its body frame
      */ 
-    double x_accel;
+    double lateral_vel = 0;
     /**
-     * 2d y-axis acceleration of the vehicle center of gravity in m/s^2
+     * The yaw rate of the vehicle in rad/s in the body frame which is equivalent to the rate of change of orientation
      */ 
-    double y_accel;
+    double yaw_rate = 0;
+    /** 
+     * The angular velocity of the front wheel in rad/s
+     */ 
+    double front_wheel_rotation_rate = 0;
     /**
-     * The angle of the vehicle centerline with respect to the X axis in rad
+     * The angular velocity of the rear wheel in rad/s
      */ 
-    double angle_with_x_axis;
+    double rear_wheel_rotation_rate = 0;
     /**
-     * The angular velocity of the vehicle centerline with respect to the X axis in rad/s
+     * The steering angle of the front wheel in rad with left being positive
      */ 
-    double angular_vel;
+    double steering_angle = 0;
     /**
-     * The angular acceleration of the vehicle centerline with respect to the X axis in rad/s^2
+     * The angle the trailer makes with the vehicle longitudinal axis in rad with left being positive
      */ 
-    double angular_accel;
+    double trailer_angle = 0;
     /**
-     * The current steering angle in rad of the wheels relative to the vehicle center line. Positive angles will be to the left of the vehicle.
+     * The previous velocity command in m/s
      */ 
-    double steering_angle;
+    double prev_vel_cmd = 0;
     /**
-     * The current angle in rad a trailer (if any) makes with the vehicle center line. Positive angles will be to the left of the cab centerline
+     * The previous steering command in rad
      */ 
-    double trailer_angle;
+    double prev_steering_cmd = 0;
+
+    /**
+     * Overload of << operation so struct will output as strings in print functions
+     * 
+     */ 
+    friend std::ostream& operator<<( std::ostream& os, const VehicleState& v )
+    {
+      os << "VehicleState [ " << 
+        v.X_pos_global << ", " <<
+        v.Y_pos_global << ", " <<
+        v.orientation << ", " <<
+        v.longitudinal_vel << ", " <<
+        v.lateral_vel << ", " <<
+        v.yaw_rate << ", " <<
+        v.front_wheel_rotation_rate << ", " <<
+        v.rear_wheel_rotation_rate << ", " <<
+        v.steering_angle << ", " <<
+        v.trailer_angle << ", " <<
+        v.prev_steering_cmd << ", " <<
+        v.prev_vel_cmd << " ]";
+
+      return os;
+    }
   };
 }

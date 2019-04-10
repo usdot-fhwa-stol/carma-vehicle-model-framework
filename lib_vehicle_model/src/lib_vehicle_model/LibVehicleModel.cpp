@@ -110,7 +110,7 @@ namespace lib_vehicle_model {
     }
 
   std::vector<VehicleState> predict(const VehicleState& initial_state,
-    const std::vector<VehicleModelControlInput>& control_inputs, double timestep) {
+    const std::vector<VehicleControlInput>& control_inputs, double timestep) {
 
       if (!modelLoaded_) {
         throw ModelAccessException("Attempted to use lib_vehicle_model::predict before model was loaded with call to lib_vehicle_model::init()");

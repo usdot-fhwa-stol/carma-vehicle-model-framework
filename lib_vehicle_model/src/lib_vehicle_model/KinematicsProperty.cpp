@@ -33,5 +33,7 @@ namespace lib_vehicle_model {
         case KinematicsProperty::TIME: os << "TIME"; break;
         default: os << "ERROR: UNKNOWN TYPE"; break;
     }
+
+    return os;
   }
 }

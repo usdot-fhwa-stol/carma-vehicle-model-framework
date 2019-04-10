@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(lib_vehicle_model)
+project(passenger_car_dynamic_model)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
@@ -8,11 +8,11 @@ add_compile_options(-std=c++11)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  roscpp
+  lib_vehicle_model
 )
 
 ## System dependencies are found with CMake's conventions
-find_package(Boost REQUIRED)
+# find_package(Boost REQUIRED)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -103,8 +103,7 @@ find_package(Boost REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS roscpp
-#  DEPENDS system_lib
+  CATKIN_DEPENDS lib_vehicle_model
 )
 
 ###########
@@ -115,20 +114,16 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(
  include
+ ${lib_vehicle_model_INCLUDE_DIRS}
  ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
-add_library(${PROJECT_NAME}
-  src/${PROJECT_NAME}/KinematicsSolver.cpp
-  src/${PROJECT_NAME}/ROSParameterServer.cpp
-  src/${PROJECT_NAME}/LibVehicleModel.cpp
-  src/${PROJECT_NAME}/ModelLoader.cpp
-  src/${PROJECT_NAME}/ConstraintChecker.cpp
-  src/${PROJECT_NAME}/KinematicsProperty.cpp
-  src/${PROJECT_NAME}/ModelAccessException.cpp
-)
-add_dependencies( ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
+## Declare as a SHARED library for dynamic linking
+ add_library(${PROJECT_NAME} SHARED
+  src/${PROJECT_NAME}/EntryPoint.cpp
+  src/${PROJECT_NAME}/PassengerCarDynamicModel.cpp
+ )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -144,16 +139,17 @@ add_dependencies( ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
 ## e.g. "rosrun someones_pkg node" instead of "rosrun someones_pkg someones_pkg_node"
-# set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME} PREFIX "")
+# set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME node PREFIX "")
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(${PROJECT_NAME}_node
-#   ${catkin_LIBRARIES}
-# )
+target_link_libraries(${PROJECT_NAME}
+  lib_vehicle_model
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##
@@ -177,37 +173,32 @@ install(TARGETS ${PROJECT_NAME}
 )
 
 ## Mark cpp header files for installation
-install(DIRECTORY include
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  FILES_MATCHING PATTERN "*.h"
-  PATTERN ".svn" EXCLUDE
-)
+# install(DIRECTORY include/${PROJECT_NAME}/
+#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+#   FILES_MATCHING PATTERN "*.h"
+#   PATTERN ".svn" EXCLUDE
+# )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
-# install(FILES
-#   # myfile1
-#   # myfile2
+# install(DIRECTORY
+#   launch
 #   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 # )
 
 #############
 ## Testing ##
 #############
-
+message(STATUS "Before Test")
 ## Add gtest based cpp test target and link libraries
 catkin_add_gmock(${PROJECT_NAME}-test 
   test/TestEntryPoint.cpp
-  test/KinematicsSolverTest.cpp
-  test/ConstraintCheckerTest.cpp
-  test/ModelLoaderTest.cpp
-  test/LibVehicleModelTest.cpp
-  test/ODESolverTest.cpp
+  test/PassengerCarDynamicModelTest.cpp
 
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test # Add test directory as working directory for unit tests
 )
 if(TARGET ${PROJECT_NAME}-test)
-  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} ${catkin_LIBRARIES})
-  add_dependencies( ${PROJECT_NAME}-test ${catkin_EXPORTED_TARGETS})
+  target_link_libraries(${PROJECT_NAME}-test lib_vehicle_model ${PROJECT_NAME} ${catkin_LIBRARIES})
+  add_dependencies( ${PROJECT_NAME}-test lib_vehicle_model ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 endif()
 
 ## Add folders to be run by python nosetests

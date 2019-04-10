@@ -27,8 +27,8 @@ using namespace lib_vehicle_model;
 ConstraintChecker::ConstraintChecker(std::shared_ptr<ParameterServer> parameter_server) {
 
   // Load Parameters
-  bool accelParam = parameter_server->getParam("forward_acceleration_limit", forward_acceleration_limit_);
-  bool decelParam = parameter_server->getParam("forward_deceleration_limit", forward_deceleration_limit_);
+  bool maxSpeedParam = parameter_server->getParam("max_forward_speed", max_forward_speed_);
+  bool minSpeedParam = parameter_server->getParam("min_forward_speed", min_forward_speed_);
   bool maxSteerParam = parameter_server->getParam("max_steering_angle", max_steering_angle_);
   bool minSteerParam = parameter_server->getParam("min_steering_angle", min_steering_angle_);
   bool maxSteerRateParam = parameter_server->getParam("max_steering_angle_rate", max_steering_angle_rate_);
@@ -36,13 +36,13 @@ ConstraintChecker::ConstraintChecker(std::shared_ptr<ParameterServer> parameter_
   bool minTrailerAngleParam = parameter_server->getParam("min_trailer_angle", min_trailer_angle_);
 
   // Check if all the required parameters could be loaded
-  if (!(accelParam && decelParam && maxSteerParam && minSteerParam
+  if (!(maxSpeedParam && minSpeedParam && maxSteerParam && minSteerParam
          && maxSteerRateParam && maxTrailerAngleParam && minTrailerAngleParam)) {
 
     std::ostringstream msg;
     msg << "One of the required parameters could not be found or read " 
-      << " forward_acceleration_limit: " << accelParam 
-      << " forward_deceleration_limit: " << decelParam 
+      << " max_forward_speed: " << maxSpeedParam 
+      << " min_forward_speed: " << minSpeedParam 
       << " max_steering_angle: " << maxSteerParam 
       << " min_steering_angle: " << minSteerParam 
       << " max_steering_angle_rate: " << maxSteerRateParam
@@ -78,22 +78,30 @@ void ConstraintChecker::validateInitialState(const VehicleState& initial_state) 
 
 } 
 
-void ConstraintChecker::validateControlInputs(const VehicleState& initial_state, const std::vector<VehicleModelControlInput>& control_inputs, const double timestep) const {
+void ConstraintChecker::validateControlInputs(const VehicleState& initial_state, const std::vector<VehicleControlInput>& control_inputs, const double timestep) const {
+
+  std::ostringstream msg;
+
+  // Check we were given some control inputs
+  if (control_inputs.size() == 0) {
+     msg << "Invalid control_inputs: empty vector provided as control inputs";
+     throw std::invalid_argument(msg.str());
+  }
 
   // Last steering angle used to compute rate of steering angle change between control inputs
   double last_steer_angle = initial_state.steering_angle;
 
   size_t count = 0;
-  std::ostringstream msg;
   // Validate each control input in sequence
-  for (const VehicleModelControlInput& control : control_inputs) {
-    if (control.target_acceleration < forward_deceleration_limit_) {
-      msg << "Invalid control_input " << count << " with target_acceleration: " << control.target_acceleration << " is below min of: " << forward_deceleration_limit_;
+  for (const VehicleControlInput& control : control_inputs) {
+
+    if (control.target_velocity < min_forward_speed_) {
+      msg << "Invalid control_input " << count << " with target_velocity: " << control.target_velocity << " is below min of: " << min_forward_speed_;
       throw std::invalid_argument(msg.str());
     }
 
-    if (control.target_acceleration > forward_acceleration_limit_) {
-      msg << "Invalid control_input " << count << " with target_acceleration: " << control.target_acceleration << " is above max of: " << forward_acceleration_limit_;
+    if (control.target_velocity > max_forward_speed_) {
+      msg << "Invalid control_input " << count << " with target_velocity: " << control.target_velocity << " is above max of: " << max_forward_speed_;
       throw std::invalid_argument(msg.str());
     }
 

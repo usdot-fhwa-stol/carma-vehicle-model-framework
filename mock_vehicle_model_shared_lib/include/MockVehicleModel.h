@@ -20,10 +20,8 @@
 #include <memory>
 #include <lib_vehicle_model/VehicleState.h>
 #include <lib_vehicle_model/VehicleMotionModel.h>
-#include <lib_vehicle_model/VehicleModelControlInput.h>
+#include <lib_vehicle_model/VehicleControlInput.h>
 #include <lib_vehicle_model/ParameterServer.h>
-
-using namespace lib_vehicle_model;
 
 /**
  * @class MockVehicleModel
@@ -31,10 +29,10 @@ using namespace lib_vehicle_model;
  * 
  * NOTE: This class should not be used in real world execution on a vehicle
  */
-class MockVehicleModel: public VehicleMotionModel
+class MockVehicleModel: public lib_vehicle_model::VehicleMotionModel
 {
   private:
-    std::shared_ptr<ParameterServer> param_server_;
+    std::shared_ptr<lib_vehicle_model::ParameterServer> param_server_;
 
     // Parameters
     double example_param_;
@@ -56,12 +54,11 @@ class MockVehicleModel: public VehicleMotionModel
     //
     // Overriden interface functions
     //
+    void setParameterServer(std::shared_ptr<lib_vehicle_model::ParameterServer> parameter_server) override;
 
-    void setParameterServer(std::shared_ptr<ParameterServer> parameter_server) override;
-
-    std::vector<VehicleState> predict(const VehicleState& initial_state,
+    std::vector<lib_vehicle_model::VehicleState> predict(const lib_vehicle_model::VehicleState& initial_state,
       double timestep, double delta_t) override; 
 
-    std::vector<VehicleState> predict(const VehicleState& initial_state,
-      const std::vector<VehicleModelControlInput>& control_inputs, double timestep) override;
+    std::vector<lib_vehicle_model::VehicleState> predict(const lib_vehicle_model::VehicleState& initial_state,
+      const std::vector<lib_vehicle_model::VehicleControlInput>& control_inputs, double timestep) override;
 };

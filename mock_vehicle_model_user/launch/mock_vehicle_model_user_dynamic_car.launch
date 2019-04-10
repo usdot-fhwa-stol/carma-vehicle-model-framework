@@ -15,9 +15,10 @@
   the License.
 -->
 
+<!-- This launch files shows how to launch the mocke vehicle model user with the passenger car dynamic model -->
 <launch>
     <!-- Vehicle Model Accessor Params -->
-    <arg name="vehicle_model_lib_path"     default="/opt/carma/install/lib/libmock_vehicle_model_shared_lib.so" doc="The path to the shared library which will be loaded as the host vehicle model"/>
+    <arg name="vehicle_model_lib_path"     default="/opt/carma/install/lib/libpassenger_car_dynamic_model.so" doc="The path to the shared library which will be loaded as the host vehicle model"/>
     <arg name="max_forward_speed"          default="10.0" doc="The maximum forward speed in m/s"/>
     <arg name="min_forward_speed"          default="0.0" doc="The minimum forward speed in m/s"/>
     <arg name="max_steering_angle"         default="180.0" doc="The maximum steering angle relative to the vehicle center line in rad. Positive angles will be to the left of the vehicle centerline."/>
@@ -26,8 +27,16 @@
     <arg name="max_trailer_angle"          default="180.0" doc="The maximum allowed angle of an attached trailer in rad. Positive angles will be to the left of the cab centerline"/>
     <arg name="min_trailer_angle"          default="-180.0" doc="The minimum allowed angle of an attached trailer in rad. Positive angles will be to the left of the cab centerline"/>
 
-    <!-- Loaded Mock Vehicle Model Param -->
-    <arg name="example_param" default="20.0" doc="Example parameter to demonstrate connection to ros param server by shared lib"/>
+    <!-- Loaded Dynamic Vehicle Model Params -->
+    <arg name="length_to_f"                 default="2.4384" doc="The distance from the center of mass to the front wheels axis along the vehicle center line in m."/>
+    <arg name="length_to_r"                 default="2.4384" doc="The distance from the center of mass to the rear wheels axis along the vehicle center line in m."/>
+    <arg name="effective_wheel_radius_f"    default="0.3048" doc="The vertical distance from the front axle to the ground when the vehicle is loaded."/>
+    <arg name="effective_wheel_radius_r"    default="0.3048" doc="The vertical distance from the rear axle to the ground when the vehicle is loaded."/>
+    <arg name="tire_longitudinal_stiffness" default="14166.0" doc="The longitudinal tire stiffness in N/unit slip."/>
+    <arg name="tire_cornering_stiffness"    default="51560.0" doc="The tire cornering stiffness in N/rad. Variable Cay"/>
+    <arg name="moment_of_inertia"           default="2943.35411328" doc="The moment of inertia of the vehicle about its center of mass in kgm^2"/>
+    <arg name="vehicle_mass"                default="1302" doc="The mass of the vehicle in kg."/>
+
     
     <!-- Convert Args to Params -->
     <param name = "vehicle_model_lib_path"     value = "$(arg vehicle_model_lib_path)" />
@@ -38,7 +47,16 @@
     <param name = "max_steering_angle_rate"    value = "$(arg max_steering_angle_rate)" />
     <param name = "max_trailer_angle"          value = "$(arg max_trailer_angle)" />
     <param name = "min_trailer_angle"          value = "$(arg min_trailer_angle)" />
-    <param name = "example_param"              value = "$(arg example_param)" />
+
+    <param name = "length_to_f"                 value = "$(arg length_to_f)" />
+    <param name = "length_to_r"                 value = "$(arg length_to_r)" />
+    <param name = "effective_wheel_radius_f"    value = "$(arg effective_wheel_radius_f)" />
+    <param name = "effective_wheel_radius_r"    value = "$(arg effective_wheel_radius_r)" />
+    <param name = "tire_longitudinal_stiffness" value = "$(arg tire_longitudinal_stiffness)" />
+    <param name = "tire_cornering_stiffness"    value = "$(arg tire_cornering_stiffness)" />
+    <param name = "moment_of_inertia"           value = "$(arg moment_of_inertia)" />
+    <param name = "vehicle_mass"                value = "$(arg vehicle_mass)" />
+
 
     <!-- Mock Vehicle Model User Node -->
     <node pkg="mock_vehicle_model_user" type="mock_vehicle_model_user_node" name="mock_vehicle_model_user" output="screen"/>

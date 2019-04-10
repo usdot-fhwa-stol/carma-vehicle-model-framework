@@ -46,10 +46,10 @@ int MockVehicleModelUser::run() {
     ros::spinOnce();
 
     lib_vehicle_model::VehicleState state;
-    state.x_pos = 10;
+    state.X_pos_global = 10;
     std::vector<lib_vehicle_model::VehicleState> results = lib_vehicle_model::predict(state, 0.1, 0.2);
     std::ostringstream msg;
-    msg << "Returned xPos = " << results.at(0).x_pos << " Given input = " << state.x_pos;
+    msg << "Returned xPos = " << results.at(0).X_pos_global << " Given input = " << state.X_pos_global;
     std_msgs::String str_msg;
     str_msg.data = msg.str();
     exception_alert_pub_.publish(str_msg);

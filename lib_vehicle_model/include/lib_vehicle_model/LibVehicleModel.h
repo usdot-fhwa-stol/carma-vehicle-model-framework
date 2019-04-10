@@ -21,7 +21,7 @@
 #include "ModelAccessException.h"
 #include "VehicleState.h"
 #include "VehicleMotionModel.h"
-#include "VehicleModelControlInput.h"
+#include "VehicleControlInput.h"
 #include "ParameterServer.h"
 #include "KinematicsSolver.h"
 #include "KinematicsProperty.h"
@@ -79,6 +79,7 @@ namespace lib_vehicle_model {
    * @return A list of traversed states seperated by the timestep excluding the initial state
    * 
    * @throws ModelAccessException If this function is called before the init() function
+   * @throws std::invalid_argument If the initial vehicle state is found to be invalid
    * 
    * NOTE: This function header must match a predict function found in the VehicleMotionModel interface
    * 
@@ -96,10 +97,11 @@ namespace lib_vehicle_model {
    * @return A list of traversed states seperated by the timestep excluding the initial state
    * 
    * @throws ModelAccessException If this function is called before the init() function
+   * @throws std::invalid_argument If the initial vehicle state or control inputs are found to be invalid
    * 
    * NOTE: This function header must match a predict function found in the VehicleMotionModel interface
    * 
    */
   std::vector<VehicleState> predict(const VehicleState& initial_state,
-    const std::vector<VehicleModelControlInput>& control_inputs, double timestep);
+    const std::vector<VehicleControlInput>& control_inputs, double timestep);
 }

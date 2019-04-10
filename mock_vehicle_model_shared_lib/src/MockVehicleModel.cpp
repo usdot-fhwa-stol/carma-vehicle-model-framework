@@ -17,6 +17,7 @@
 #include "MockVehicleModel.h"
 
 
+using namespace lib_vehicle_model;
 
 /**
  * Cpp containing the implementation of MockVehicleModel
@@ -34,17 +35,17 @@ void MockVehicleModel::setParameterServer(std::shared_ptr<ParameterServer> param
 std::vector<VehicleState> MockVehicleModel::predict(const VehicleState& initial_state,
   double timestep, double delta_t) {
     VehicleState vs;
-    vs.x_pos = initial_state.x_pos + 5;// Update x pos to confirm data was processed
+    vs.X_pos_global = initial_state.X_pos_global + 5;// Update x pos to confirm data was processed
     std::vector<VehicleState> states;
     states.push_back(vs);
     return states;
   }
 
 std::vector<VehicleState> MockVehicleModel::predict(const VehicleState& initial_state,
-  const std::vector<VehicleModelControlInput>& control_inputs, double timestep) {
+  const std::vector<VehicleControlInput>& control_inputs, double timestep) {
 
     VehicleState vs;
-    vs.x_pos = initial_state.x_pos + 5;// Update x pos to confirm data was processed
+    vs.X_pos_global = initial_state.X_pos_global + 5;// Update x pos to confirm data was processed
     std::vector<VehicleState> states;
     states.push_back(vs);
     return states;

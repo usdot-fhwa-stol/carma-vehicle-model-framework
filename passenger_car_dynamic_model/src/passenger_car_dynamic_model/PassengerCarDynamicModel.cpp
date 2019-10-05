@@ -28,8 +28,8 @@ using namespace lib_vehicle_model;
 
 PassengerCarDynamicModel::PassengerCarDynamicModel() {
   // Bind the callback functions
-  ode_func_ = std::bind(&PassengerCarDynamicModel::DynamicCarODE, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
-  post_step_func_ = std::bind(&PassengerCarDynamicModel::ODEPostStep, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
+  ode_func_ = std::bind(&PassengerCarDynamicModel::DynamicCarODE, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
+  post_step_func_ = std::bind(&PassengerCarDynamicModel::ODEPostStep, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6);
 };
 
 PassengerCarDynamicModel::~PassengerCarDynamicModel() {};
@@ -113,14 +113,16 @@ std::vector<VehicleState> PassengerCarDynamicModel::predict(const VehicleState& 
     state[8]  = initial_state.steering_angle;
 
     // Integrate ODE
-    ODESolver::rk4<VehicleControlInput>(
+    double prev_time = 0.0;
+    ODESolver::rk4<VehicleControlInput, double>(
       ode_func_,
       control_inputs.size(),
       timestep,
       state,
       control_inputs,
       ode_outputs,
-      post_step_func_
+      post_step_func_,
+      prev_time
     );
 
     // Convert result to target output
@@ -153,6 +155,7 @@ std::vector<VehicleState> PassengerCarDynamicModel::predict(const VehicleState& 
 
 void PassengerCarDynamicModel::DynamicCarODE(const ODESolver::State& state,
   const VehicleControlInput& control,
+  double& prev_time,
   ODESolver::StateDot& state_dot,
   double t) const
 {
@@ -258,7 +261,7 @@ void PassengerCarDynamicModel::DynamicCarODE(const ODESolver::State& state,
 }
 
 
-void PassengerCarDynamicModel::ODEPostStep(const ODESolver::State& current, const VehicleControlInput& control, double t, const ODESolver::State& initial_state, ODESolver::State& output) const {
+void PassengerCarDynamicModel::ODEPostStep(const ODESolver::State& current, const VehicleControlInput& control, double& prev_time, double t, const ODESolver::State& initial_state, ODESolver::State& output) const {
   // Copy state contents
   output = current;
   output.resize(FULL_STATE_SIZE);

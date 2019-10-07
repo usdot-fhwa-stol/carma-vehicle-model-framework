@@ -42,19 +42,24 @@ TEST(ODESOlver, rk4)
   // Solution generated with MATLAB ode45 solver
 
   // Integrate ODE
-  ODESolver::rk4<double>(
-    [this](const ODESolver::State& state, const double& control, ODESolver::StateDot& state_dot, const double t) -> void {
+  int tracker = 0;
+  ODESolver::rk4<double,int>(
+    [this](const ODESolver::State& state, const double& control, int tracker, ODESolver::StateDot& state_dot, const double t) -> void {
       state_dot[0] = 4 * exp(0.8*t) - 0.5*state[0];
       state_dot[1] = 4 * exp(0.8*t) - 3*state[1];
+      std::cerr << " ODE Call t: " << t << std::endl;
     },
     control_inputs.size(),
     timestep,
     initial_state,
     control_inputs,
     ode_outputs,
-    [this](const ODESolver::State& current, const double& control, const double t, const ODESolver::State& initial_state, ODESolver::State& output) -> void {
+    [this](const ODESolver::State& current, const double& control, int tracker, const double t, const ODESolver::State& initial_state, ODESolver::State& output) -> void {
       output = current;
-    }
+      std::cerr << " Obs Call t: " << t << std::endl;
+
+    },
+    tracker
   );
 
 

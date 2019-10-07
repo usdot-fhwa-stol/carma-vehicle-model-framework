@@ -18,6 +18,7 @@
 #include <math.h>
 #include <sstream>
 #include <functional>
+#include "passenger_car_dynamic_model/TwoStepPID.h"
 #include "passenger_car_dynamic_model/PassengerCarDynamicModel.h"
 
 /**
@@ -28,8 +29,8 @@ using namespace lib_vehicle_model;
 
 PassengerCarDynamicModel::PassengerCarDynamicModel() {
   // Bind the callback functions
-  ode_func_ = std::bind(&PassengerCarDynamicModel::DynamicCarODE, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
-  post_step_func_ = std::bind(&PassengerCarDynamicModel::ODEPostStep, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
+  ode_func_ = std::bind(&PassengerCarDynamicModel::DynamicCarODE, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
+  post_step_func_ = std::bind(&PassengerCarDynamicModel::ODEPostStep, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6);
 };
 
 PassengerCarDynamicModel::~PassengerCarDynamicModel() {};
@@ -38,18 +39,33 @@ void PassengerCarDynamicModel::setParameterServer(std::shared_ptr<ParameterServe
   param_server_ = parameter_server;
   
   // Load Parameters
-  bool l_f_param        = param_server_->getParam("length_to_f", l_f_);
-  bool l_r_param        = param_server_->getParam("length_to_r", l_r_);
-  bool R_f_param        = param_server_->getParam("effective_wheel_radius_f", R_ef_);
-  bool R_r_param        = param_server_->getParam("effective_wheel_radius_r", R_er_);
-  bool long_stiff_param = param_server_->getParam("tire_longitudinal_stiffness", C_sx_);
-  bool lat_stiff_param  = param_server_->getParam("tire_cornering_stiffness", C_ay_);
-  bool inertia_param    = param_server_->getParam("moment_of_inertia", I_z_);
-  bool mass_param       = param_server_->getParam("vehicle_mass", m_);
+  bool l_f_param               = param_server_->getParam("length_to_f", l_f_);
+  bool l_r_param               = param_server_->getParam("length_to_r", l_r_);
+  bool R_f_param               = param_server_->getParam("effective_wheel_radius_f", R_ef_);
+  bool R_r_param               = param_server_->getParam("effective_wheel_radius_r", R_er_);
+  bool f_long_stiff_param      = param_server_->getParam("tire_longitudinal_stiffness_f", C_sxf_);
+  bool r_long_stiff_param      = param_server_->getParam("tire_longitudinal_stiffness_r", C_sxr_);
+  bool f_lat_stiff_param       = param_server_->getParam("tire_cornering_stiffness_f", C_ayf_);
+  bool r_lat_stiff_param       = param_server_->getParam("tire_cornering_stiffness_r", C_ayr_);
+  bool inertia_param           = param_server_->getParam("moment_of_inertia", I_z_);
+  bool mass_param              = param_server_->getParam("vehicle_mass", m_);
+  bool steer_p_param           = param_server_->getParam("steering_kP", steer_P_);
+  bool steer_i_param           = param_server_->getParam("steering_kI", steer_I_);
+  bool steer_d_param           = param_server_->getParam("steering_kD", steer_D_);
+  bool wheel_p_param           = param_server_->getParam("wheel_kP", wheel_P_);
+  bool wheel_i_param           = param_server_->getParam("wheel_kI", wheel_I_);
+  bool wheel_d_param           = param_server_->getParam("wheel_kD", wheel_D_);
+  bool max_steering_rate_param = param_server_->getParam("max_steering_rate", max_steering_rate_);
+  bool top_speed_param         = param_server_->getParam("top_speed", top_speed_);
 
   // Check if all the required parameters could be loaded
   if (!(l_f_param && l_r_param && R_f_param && R_r_param
-         && long_stiff_param && lat_stiff_param && inertia_param && mass_param)) {
+         && f_long_stiff_param && r_long_stiff_param && f_lat_stiff_param && r_lat_stiff_param 
+         && inertia_param && mass_param 
+         && steer_p_param && steer_i_param && steer_d_param
+         && wheel_p_param && wheel_i_param && wheel_d_param
+         && max_steering_rate_param && top_speed_param
+      )) {
 
     std::ostringstream msg;
     msg << "One of the required parameters could not be found or read " 
@@ -57,13 +73,27 @@ void PassengerCarDynamicModel::setParameterServer(std::shared_ptr<ParameterServe
       << " length_to_r: " << l_r_param 
       << " effective_wheel_radius_f: " << R_f_param 
       << " effective_wheel_radius_r: " << R_r_param 
-      << " tire_longitudinal_stiffness: " << long_stiff_param
-      << " tire_cornering_stiffness: " << lat_stiff_param 
+      << " tire_longitudinal_stiffness_f: " << f_long_stiff_param
+      << " tire_longitudinal_stiffness_r: " << r_long_stiff_param
+      << " tire_cornering_stiffness_f: " << f_lat_stiff_param 
+      << " tire_cornering_stiffness_r: " << r_lat_stiff_param 
       << " moment_of_inertia: " << inertia_param
-      << " vehicle_mass: " << mass_param;
+      << " vehicle_mass: " << mass_param
+      << " steering_kP: " << steer_p_param
+      << " steering_kI: " << steer_i_param
+      << " steering_kD: " << steer_d_param
+      << " wheel_kP: " << wheel_p_param
+      << " wheel_kI: " << wheel_i_param
+      << " wheel_kD: " << wheel_d_param
+      << " max_steering_rate" << max_steering_rate_param
+      << " top_speed: " << top_speed_param;
+
 
     throw std::invalid_argument(msg.str());
   }
+
+  // If params are valid compute the max wheel rotation rate
+  max_wheel_rotation_rate_ = top_speed_ / R_ef_; // (m/s) / radius = rad/s
 }
 
 std::vector<VehicleState> PassengerCarDynamicModel::predict(const VehicleState& initial_state,
@@ -100,6 +130,24 @@ std::vector<VehicleState> PassengerCarDynamicModel::predict(const VehicleState& 
     std::vector<std::tuple<double, ODESolver::State>> ode_outputs;
     ode_outputs.reserve(control_inputs.size());
 
+    // Tracker used to update PID control loops during integration
+    std::vector<TwoStepPID> pid_tracker;
+    // Vector description 
+    // pid_tracker[0] = steer_pid
+    // pid_tracker[1] = front_wheel_pid
+
+    TwoStepPID steer_pid(steer_P_, steer_I_, steer_D_);
+    steer_pid.setOutputMax(max_steering_rate_);
+    steer_pid.setOutputMin(-max_steering_rate_);
+
+    pid_tracker.push_back(steer_pid);
+
+    TwoStepPID front_wheel_pid(wheel_P_, wheel_I_, wheel_D_);
+    front_wheel_pid.setOutputMax(max_wheel_rotation_rate_);
+    front_wheel_pid.setOutputMin(0.0); // This model does not predict motion in reverse
+
+    pid_tracker.push_back(front_wheel_pid);
+
     // Populate initial condition
     ODESolver::State state(ODE_STATE_SIZE, 0);
     state[0]  = initial_state.X_pos_global;
@@ -113,22 +161,23 @@ std::vector<VehicleState> PassengerCarDynamicModel::predict(const VehicleState& 
     state[8]  = initial_state.steering_angle;
 
     // Integrate ODE
-    ODESolver::rk4<VehicleControlInput>(
+    ODESolver::rk4<VehicleControlInput, std::vector<TwoStepPID>>(
       ode_func_,
       control_inputs.size(),
       timestep,
       state,
       control_inputs,
       ode_outputs,
-      post_step_func_
+      post_step_func_,
+      pid_tracker
     );
 
     // Convert result to target output
     for (size_t j = 0; j < ode_outputs.size(); j++) {
       const ODESolver::State new_state = std::get<1>(ode_outputs[j]);
 
-      if (new_state.size() != 12) {
-        throw std::invalid_argument("Too small");
+      if (new_state.size() != FULL_STATE_SIZE) {
+        throw std::invalid_argument("ODESolver result is Too small");
       }
       // Save result
       VehicleState result;
@@ -152,15 +201,16 @@ std::vector<VehicleState> PassengerCarDynamicModel::predict(const VehicleState& 
   }
 
 void PassengerCarDynamicModel::DynamicCarODE(const ODESolver::State& state,
-  const VehicleControlInput& control,
+  const VehicleControlInput& control, std::vector<TwoStepPID>& pid_tracker,
   ODESolver::StateDot& state_dot,
   double t) const
 {
+
   // Extract control values
   const double d_fc = control.target_steering_angle; // Steering angle commend
   const double V_c = control.target_velocity; // Velocity command
 
-  // Extract the state values.  The data of ompl::base::SE2StateSpace is mapped as:
+  // Extract the state values.
   // [X, Y, Theta, v_xc, v_yc, r, w_f, w_r, d_f, sigma]
   const  double X     = state[0];
   const  double Y     = state[1];
@@ -224,20 +274,21 @@ void PassengerCarDynamicModel::DynamicCarODE(const ODESolver::State& state,
     // Compute lateral slip angle
     const double a_f = atan((v_yc + r * l_f_) / v_xc) + d_f;
 
-    F_xf = C_sx_ * sigma_f;
-    F_yf = -C_ay_ * a_f;
+    F_xf = C_sxf_ * sigma_f;
+    F_yf = -C_ayf_ * a_f;
   }
 
   if (non_zero_force_r) {
     // Compute longitudinal slip ratio
+    const double rear_no_steer_no_slip_vel = R_er_ * w_r;
     const double sigma_r = isAccelerating ?
-      (R_er_ * w_r - v_xc) / v_xc :   // When accelerating
-      (R_er_ * w_r - v_xc) / (R_er_ * w_r); // When braking
+      (rear_no_steer_no_slip_vel - v_xc) / v_xc :   // When accelerating
+      (rear_no_steer_no_slip_vel - v_xc) / (rear_no_steer_no_slip_vel); // When braking
     // Compute lateral slip angle
     const double a_r = atan((v_yc - r * l_r_) / v_xc);
 
-    F_xr = C_sx_ * sigma_r;
-    F_yr = -C_ay_ * a_r;
+    F_xr = C_sxr_ * sigma_r;
+    F_yr = -C_ayr_ * a_r;
   }
 
   const double cos_Theta = cos(Theta);
@@ -252,32 +303,45 @@ void PassengerCarDynamicModel::DynamicCarODE(const ODESolver::State& state,
   state_dot[3] = ((F_xf * cos_d_f + F_xr - F_yf * sin_d_f) / m_) + r * v_yc;            // v_xc-dot
   state_dot[4] = ((F_yf * cos_d_f + F_yr + F_xf * sin_d_f) / m_) - r * v_xc;            // v_yc-dot
   state_dot[5] = (l_f_ * F_yf * cos_d_f + l_f_ * F_xf * sin_d_f - l_r_ * F_yr) / I_z_;  // r-dot
-  state_dot[6] = funcW_f(w_f, w_r, V_c);                                                // w_f-dot
-  state_dot[7] = funcW_r(w_f, w_r, V_c);                                                // w_r-dot
-  state_dot[8] = funcD_f(d_f, d_fc);                                                    // d_f-dot
+  state_dot[6] = funcW_f(w_f, w_r, V_c, t, pid_tracker);                                // w_f-dot
+  state_dot[7] = funcW_r(w_f, w_r, V_c, t, pid_tracker);                                // w_r-dot
+  state_dot[8] = funcD_f(d_f, d_fc, t, pid_tracker);                                    // d_f-dot
 }
 
 
-void PassengerCarDynamicModel::ODEPostStep(const ODESolver::State& current, const VehicleControlInput& control, double t, const ODESolver::State& initial_state, ODESolver::State& output) const {
+void PassengerCarDynamicModel::ODEPostStep(const ODESolver::State& current, const VehicleControlInput& control, std::vector<TwoStepPID>& pid_tracker,
+  double t, const ODESolver::State& prev_final_state, ODESolver::State& output) const {
   // Copy state contents
   output = current;
   output.resize(FULL_STATE_SIZE);
 
+  // Update steer PID
+  pid_tracker[0].setSetpoint(control.target_steering_angle);
+  pid_tracker[0].updateMemory(current[8], t);
+
+  // Update front wheel PID
+  pid_tracker[1].setSetpoint(control.target_velocity);
+  pid_tracker[1].updateMemory(current[6], t);
+
   // Copy over un-simulated values
   output[9]  = 0;
   output[10] = control.target_steering_angle;
+  //std::cerr << "Prev " << prev_final_state[10]  << " Expected Next Prev " << output[10] << std::endl;
   output[11] = control.target_velocity;
 }
 
-double PassengerCarDynamicModel::funcW_f(const double w_f, const double w_r, const double V_c) const {
-  return 0; // TODO Testing needs to be conducted on each vehicle to fill out this portion of the model
+double PassengerCarDynamicModel::funcW_f(const double w_f, const double w_r, const double V_c, const double t, std::vector<TwoStepPID>& pid_tracker) const {
+  pid_tracker[1].setSetpoint(V_c);
+  return pid_tracker[1].computeOutput(w_f, t);
 }
 
-double PassengerCarDynamicModel::funcW_r(const double w_f, const double w_r, const double V_c) const {
-  return 0; // TODO Testing needs to be conducted on each vehicle to fill out this portion of the model
+double PassengerCarDynamicModel::funcW_r(const double w_f, const double w_r, const double V_c, const double t, std::vector<TwoStepPID>& pid_tracker) const {
+  return 0.0; // TODO Assuming that car is front wheel drive only and torque is not applied to the rear wheels by the engine
 }
 
-double PassengerCarDynamicModel::funcD_f(const double d_f, const double d_fc) const {
-  return 0; // TODO Testing needs to be conducted on each vehicle to fill out this portion of the model
+double PassengerCarDynamicModel::funcD_f(const double d_f, const double d_fc, const double t, std::vector<TwoStepPID>& pid_tracker) const {
+
+  pid_tracker[0].setSetpoint(d_fc);
+  return pid_tracker[0].computeOutput(d_f, t);
 }
 

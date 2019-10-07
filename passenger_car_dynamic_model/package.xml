@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<package>
+<package format="2">
   <name>passenger_car_dynamic_model</name>
   <version>0.1.0</version>
   <description>
@@ -11,10 +11,18 @@
   <author email="carma@todo.todo">carma</author>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>lib_vehicle_model</build_depend>
-  <build_depend>ompl</build_depend>
-  <run_depend>lib_vehicle_model</run_depend>
-  <build_depend>ompl</build_depend>
+  <depend>lib_vehicle_model</depend>
+  <test_depend>tf2</test_depend>
+  <test_depend>rosbag</test_depend>
+  <test_depend>message_filters</test_depend>
+  <test_depend>geometry_msgs</test_depend>
+  <test_depend>sensor_msgs</test_depend>
+  <test_depend>pacmod_msgs</test_depend>
+  <test_depend>autoware_msgs</test_depend>
+  <test_depend>automotive_platform_msgs</test_depend>
+  <test_depend>roscpp</test_depend>
+
+
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

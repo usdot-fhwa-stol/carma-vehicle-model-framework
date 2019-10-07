@@ -24,6 +24,8 @@
 #include <lib_vehicle_model/VehicleMotionModel.h>
 #include <lib_vehicle_model/VehicleControlInput.h>
 #include <lib_vehicle_model/ParameterServer.h>
+#include "passenger_car_dynamic_model/TwoStepPID.h"
+
  
 /**
  * @class PassengerCarDynamicModel
@@ -32,6 +34,7 @@
  * The details of the math in this class can be found in the PassengerCarDynamicBicycleModel design document
  * 
  * NOTE: This class does not support trailers at this time. The trailer angle will remain unchanged during integration
+ *       Additionally, this class does not support motion in reverse at this time. The only limiting factor is the lack of a conversion for wheel speed in reverse.
  * 
  */
 class PassengerCarDynamicModel: public lib_vehicle_model::VehicleMotionModel
@@ -42,8 +45,8 @@ class PassengerCarDynamicModel: public lib_vehicle_model::VehicleMotionModel
     const size_t FULL_STATE_SIZE = 12; // Total number of elements in a CARMA VehicleState 
 
     // Handles to callback functions
-    lib_vehicle_model::ODESolver::ODEFunction<lib_vehicle_model::VehicleControlInput> ode_func_;
-    lib_vehicle_model::ODESolver::PostStepFunction<lib_vehicle_model::VehicleControlInput> post_step_func_;
+    lib_vehicle_model::ODESolver::ODEFunction<lib_vehicle_model::VehicleControlInput, std::vector<TwoStepPID>> ode_func_;
+    lib_vehicle_model::ODESolver::PostStepFunction<lib_vehicle_model::VehicleControlInput, std::vector<TwoStepPID>> post_step_func_;
     
     // Parameter server used to load vehicle parameters
     std::shared_ptr<lib_vehicle_model::ParameterServer> param_server_;
@@ -53,10 +56,21 @@ class PassengerCarDynamicModel: public lib_vehicle_model::VehicleMotionModel
     double l_r_; // The distance from the center of mass to the rear wheels axis along the vehicle center line in m. 
     double R_ef_; // The vertical distance from the front axle to the ground when the vehicle is loaded. 
     double R_er_; // The vertical distance from the rear axle to the ground when the vehicle is loaded. 
-    double C_sx_; // The longitudinal tire stiffness in N/unit slip. 
-    double C_ay_; // The tire cornering stiffness in N/rad. 
+    double C_sxf_; // The front longitudinal tire stiffness in N/unit slip. 
+    double C_sxr_; // The rear longitudinal tire stiffness in N/unit slip. 
+    double C_ayf_; // The front tire cornering stiffness in N/rad. 
+    double C_ayr_; // The rear tire cornering stiffness in N/rad. 
     double I_z_; // The moment of inertia of the vehicle about its center of mass in kgm^2
     double m_; // The vehicle mass in kg.
+    double steer_P_; // The P value of the PID controller used for computing steering rate
+    double steer_I_; // The I value of the PID controller used for computing steering rate
+    double steer_D_; // The D value of the PID controller used for computing steering rate
+    double wheel_P_; // The P value of the PID controller used for computing wheel rate
+    double wheel_I_; // The I value of the PID controller used for computing wheel rate
+    double wheel_D_; // The D value of the PID controller used for computing wheel rate
+    double top_speed_; // Top vehicle speed in m/s. This is used to compute max_wheel_rotation_rate and will not cap the predicted speed
+    double max_steering_rate_; // Max rate of steering change in rad/s
+    double max_wheel_rotation_rate_; // Maximum wheel rotation rate in rad/s
 
     /*
      * @brief Function describing the ODE system which defines the vehicle equations of motion
@@ -65,6 +79,7 @@ class PassengerCarDynamicModel: public lib_vehicle_model::VehicleMotionModel
      */ 
     void DynamicCarODE(const lib_vehicle_model::ODESolver::State& state,
       const lib_vehicle_model::VehicleControlInput& control,
+      std::vector<TwoStepPID>& pid_tracker,
       lib_vehicle_model::ODESolver::StateDot& state_dot,
       double t
     ) const;
@@ -77,6 +92,7 @@ class PassengerCarDynamicModel: public lib_vehicle_model::VehicleMotionModel
      */ 
     void ODEPostStep(const lib_vehicle_model::ODESolver::State& current,
       const lib_vehicle_model::VehicleControlInput& control,
+      std::vector<TwoStepPID>& pid_tracker,
       double t,
       const lib_vehicle_model::ODESolver::State& initial_state,
       lib_vehicle_model::ODESolver::State& output
@@ -89,7 +105,7 @@ class PassengerCarDynamicModel: public lib_vehicle_model::VehicleMotionModel
      * @param w_r The current rear wheel speed
      * @param V_c The new velocity command in m/s
      */ 
-    double funcW_f(const double w_f, const double w_r, const double V_c) const;
+    double funcW_f(const double w_f, const double w_r, const double V_c, const double t, std::vector<TwoStepPID>& pid_tracker) const;
 
     /**
      * @brief Helper function defines the transfer function which converts new velocity commands into rear wheel rotation rate rates of change
@@ -98,7 +114,7 @@ class PassengerCarDynamicModel: public lib_vehicle_model::VehicleMotionModel
      * @param w_r The current rear wheel speed
      * @param V_c The new velocity command in m/s
      */ 
-    double funcW_r(const double w_f, const double w_r, const double V_c) const;
+    double funcW_r(const double w_f, const double w_r, const double V_c, const double t, std::vector<TwoStepPID>& pid_tracker) const;
 
     /**
      * @brief Helper function defines the transfer function which converts new steering commands into steering rates of change
@@ -106,7 +122,7 @@ class PassengerCarDynamicModel: public lib_vehicle_model::VehicleMotionModel
      * @param d_f The current steering angle in rad
      * @param d_fc The new steering command in rad
      */ 
-    double funcD_f(const double d_f, const double d_fc) const;
+    double funcD_f(const double d_f, const double d_fc, const double t, std::vector<TwoStepPID>& pid_tracker) const;
     
 
   public:

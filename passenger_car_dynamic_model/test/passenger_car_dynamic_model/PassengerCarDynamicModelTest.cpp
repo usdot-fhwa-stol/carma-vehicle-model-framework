@@ -40,7 +40,7 @@
 #include "lib_vehicle_model/LibVehicleModel.h"
 #include "lib_vehicle_model/ODESolver.h"
 #include "passenger_car_dynamic_model/PassengerCarDynamicModel.h"
-#include "TestHelper.h"
+#include "model_test_tools/TestHelper.h"
 
 /**
  * This file unit tests the setParameterServer checker class
@@ -464,6 +464,25 @@ TEST(PassengerCarDynamicModel, predict_with_control)
 
 // }
 
+class SteeringStateFunctor {
+  model_test_tools::SteeringTestHelper& helper_;
+  public:
+    SteeringStateFunctor(model_test_tools::SteeringTestHelper& helper) : helper_(helper)
+    {}
+
+    // Callback for ode observer during integration
+    void operator()(
+      const autoware_msgs::VehicleCmdConstPtr cmd_msg,
+      const automotive_platform_msgs::SteeringFeedbackConstPtr feedback_msg
+    ) {
+      const double radPerSteeringRad = 0.05922;
+      double stamp = cmd_msg->header.stamp.toSec();
+      double setpoint = cmd_msg->ctrl_cmd.steering_angle;
+      double current = feedback_msg->steering_wheel_angle * radPerSteeringRad;
+
+      helper_.steeringCallback(stamp, setpoint, current);
+    }
+};
 
 /**
  * Tests the prediction of steering angle
@@ -529,7 +548,7 @@ TEST(PassengerCarDynamicModel, evaluate_steering_pred_accuracy)
   //// 
   // Open Data File 1
   ////
-  test_helper::SteeringTestHelper steer_test_helper(false);
+  model_test_tools::SteeringTestHelper steer_test_helper(false, 0.05);
 
   rosbag::Bag bag;
   bag.open("data/_2019-09-30-12-19-17_steer_new_test1.bag", rosbag::bagmode::Read);
@@ -541,14 +560,16 @@ TEST(PassengerCarDynamicModel, evaluate_steering_pred_accuracy)
   topics.push_back(steering_feedback_tpc);
   rosbag::View view(bag, rosbag::TopicQuery(topics));
 
-  test_helper::BagSubscriber<autoware_msgs::VehicleCmd> cmd_sub(vehicle_cmd_tpc);
-  test_helper::BagSubscriber<automotive_platform_msgs::SteeringFeedback> steering_sub(steering_feedback_tpc);
+  model_test_tools::BagSubscriber<autoware_msgs::VehicleCmd> cmd_sub(vehicle_cmd_tpc);
+  model_test_tools::BagSubscriber<automotive_platform_msgs::SteeringFeedback> steering_sub(steering_feedback_tpc);
 
   typedef message_filters::sync_policies::ApproximateTime<autoware_msgs::VehicleCmd, automotive_platform_msgs::SteeringFeedback> ApproxTimePolicy;
 
   // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
   message_filters::Synchronizer<ApproxTimePolicy> sync(ApproxTimePolicy(10), cmd_sub, steering_sub);
-  sync.registerCallback(boost::bind(&test_helper::SteeringTestHelper::steeringSyncCallback, &steer_test_helper, _1, _2));
+  
+  SteeringStateFunctor steer_functor(steer_test_helper);
+  sync.registerCallback(boost::bind<void>(steer_functor, _1, _2));
 
   // Playback bag file to collect data
   for(const rosbag::MessageInstance m : view)
@@ -574,7 +595,7 @@ TEST(PassengerCarDynamicModel, evaluate_steering_pred_accuracy)
   //// 
   // Open Data File 2
   ////
-  test_helper::SteeringTestHelper steer_test_helper2(false);
+  model_test_tools::SteeringTestHelper steer_test_helper2(false, 0.05);
 
   rosbag::Bag bag2;
   bag2.open("data/_2019-09-30-12-22-31_steer_new_test3.bag", rosbag::bagmode::Read);
@@ -583,7 +604,8 @@ TEST(PassengerCarDynamicModel, evaluate_steering_pred_accuracy)
 
   // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
   message_filters::Synchronizer<ApproxTimePolicy> sync2(ApproxTimePolicy(10), cmd_sub, steering_sub);
-  sync2.registerCallback(boost::bind(&test_helper::SteeringTestHelper::steeringSyncCallback, &steer_test_helper2, _1, _2));
+  SteeringStateFunctor steer_functor2(steer_test_helper2);
+  sync2.registerCallback(boost::bind<void>(steer_functor2, _1, _2));
 
   // Playback bag file to collect data
   for(const rosbag::MessageInstance m : view2)
@@ -605,6 +627,46 @@ TEST(PassengerCarDynamicModel, evaluate_steering_pred_accuracy)
   steer_test_helper2.sync_csv_file.close();
 }
 
+
+class VehicleStateFunctor {
+  model_test_tools::ModelTestHelper& helper_;
+  public:
+    VehicleStateFunctor(model_test_tools::ModelTestHelper& helper) : helper_(helper)
+    {}
+
+    // Callback for ode observer during integration
+    void operator()(const geometry_msgs::PoseStampedConstPtr pose_msg,
+    const sensor_msgs::ImuConstPtr imu_msg,
+    const pacmod_msgs::WheelSpeedRptConstPtr wheel_msg,
+    const geometry_msgs::TwistStampedConstPtr twist_msg,
+    const autoware_msgs::VehicleCmdConstPtr cmd_msg,
+    const automotive_platform_msgs::SteeringFeedbackConstPtr steer_msg)
+    {
+      const double radPerSteeringRad = 0.05922;
+      double stamp = pose_msg->header.stamp.toSec();
+      lib_vehicle_model::VehicleState vs;
+      vs.X_pos_global = pose_msg->pose.position.x;
+      vs.Y_pos_global = pose_msg->pose.position.y;
+      double roll, pitch, yaw;
+      model_test_tools::getRPYFromPose(pose_msg->pose, roll, pitch, yaw);
+
+      vs.orientation = yaw;
+      vs.longitudinal_vel = twist_msg->twist.linear.x;
+      vs.lateral_vel = 0;
+
+      vs.yaw_rate = imu_msg->angular_velocity.z;
+      vs.front_wheel_rotation_rate = (wheel_msg->front_left_wheel_speed + wheel_msg->front_right_wheel_speed) / 2.0; // Front wheel speed average
+      vs.rear_wheel_rotation_rate = (wheel_msg->rear_left_wheel_speed + wheel_msg->rear_right_wheel_speed) / 2.0; // Front wheel speed average
+      vs.steering_angle = steer_msg->steering_wheel_angle * radPerSteeringRad; // Convert steering wheel angle to wheel angle
+
+      lib_vehicle_model::VehicleControlInput ctrl_input;
+      ctrl_input.target_steering_angle = cmd_msg->ctrl_cmd.steering_angle;
+      ctrl_input.target_velocity = cmd_msg->ctrl_cmd.linear_velocity;
+
+      helper_.vehicleStateCallback(stamp, vs, ctrl_input); 
+    }
+};
+
 /**
  * This Unit test is for finding initial PID values based on bag files.
  * The determined values should not be taken as guaranteed optimal
@@ -617,7 +679,7 @@ TEST(PassengerCarDynamicModel, DISABLED_find_steering_pid)
 
   // Create test helper. 
   // NOTE: Set to true to record data to csv file
-  test_helper::SteeringTestHelper steer_test_helper(false); 
+  model_test_tools::SteeringTestHelper steer_test_helper(false, 0.05); 
 
   // Setup param server
   auto mock_param_server = std::make_shared<MockParamServer>();
@@ -681,15 +743,15 @@ TEST(PassengerCarDynamicModel, DISABLED_find_steering_pid)
   topics.push_back(steering_feedback_tpc);
   rosbag::View view(bag, rosbag::TopicQuery(topics));
 
-  test_helper::BagSubscriber<autoware_msgs::VehicleCmd> cmd_sub(vehicle_cmd_tpc);
-  test_helper::BagSubscriber<automotive_platform_msgs::SteeringFeedback> steering_sub(steering_feedback_tpc);
+  model_test_tools::BagSubscriber<autoware_msgs::VehicleCmd> cmd_sub(vehicle_cmd_tpc);
+  model_test_tools::BagSubscriber<automotive_platform_msgs::SteeringFeedback> steering_sub(steering_feedback_tpc);
 
   typedef message_filters::sync_policies::ApproximateTime<autoware_msgs::VehicleCmd, automotive_platform_msgs::SteeringFeedback> ApproxTimePolicy;
 
   // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
   message_filters::Synchronizer<ApproxTimePolicy> sync(ApproxTimePolicy(10), cmd_sub, steering_sub);
-  sync.registerCallback(boost::bind(&test_helper::SteeringTestHelper::steeringSyncCallback, &steer_test_helper, _1, _2));
-
+  SteeringStateFunctor steer_functor(steer_test_helper);
+  sync.registerCallback(boost::bind<void>(steer_functor, _1, _2));
   // Playback bag file to collect data
   for(const rosbag::MessageInstance m : view)
   {
@@ -819,7 +881,7 @@ TEST(PassengerCarDynamicModel, evaluate_overall_pred)
   //// 
   // Open Data File
   ////
-  test_helper::ModelTestHelper model_test_helper(true);
+  model_test_tools::ModelTestHelper model_test_helper(true, 0.01, 6.0);
 
   rosbag::Bag bag;
   bag.open("data/_2019-10-03-17-11-49_full_loop_validation_filtered.bag", rosbag::bagmode::Read);
@@ -841,12 +903,12 @@ TEST(PassengerCarDynamicModel, evaluate_overall_pred)
 
   rosbag::View view(bag, rosbag::TopicQuery(topics));
 
-  test_helper::BagSubscriber<sensor_msgs::Imu> imu_sub(imu_tpc);
-  test_helper::BagSubscriber<pacmod_msgs::WheelSpeedRpt> wheel_sub(wheel_rpt_tpc);
-  test_helper::BagSubscriber<automotive_platform_msgs::SteeringFeedback> steer_sub(steering_feedback_tpc);
-  test_helper::BagSubscriber<geometry_msgs::TwistStamped> twist_sub(twist_tpc);
-  test_helper::BagSubscriber<autoware_msgs::VehicleCmd> cmd_sub(vehicle_cmd_tpc);
-  test_helper::BagSubscriber<geometry_msgs::PoseStamped> pose_sub(pose_tpc);
+  model_test_tools::BagSubscriber<sensor_msgs::Imu> imu_sub(imu_tpc);
+  model_test_tools::BagSubscriber<pacmod_msgs::WheelSpeedRpt> wheel_sub(wheel_rpt_tpc);
+  model_test_tools::BagSubscriber<automotive_platform_msgs::SteeringFeedback> steer_sub(steering_feedback_tpc);
+  model_test_tools::BagSubscriber<geometry_msgs::TwistStamped> twist_sub(twist_tpc);
+  model_test_tools::BagSubscriber<autoware_msgs::VehicleCmd> cmd_sub(vehicle_cmd_tpc);
+  model_test_tools::BagSubscriber<geometry_msgs::PoseStamped> pose_sub(pose_tpc);
 
   typedef message_filters::sync_policies::ApproximateTime<
     geometry_msgs::PoseStamped, sensor_msgs::Imu, pacmod_msgs::WheelSpeedRpt,
@@ -855,7 +917,8 @@ TEST(PassengerCarDynamicModel, evaluate_overall_pred)
 
   // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
   message_filters::Synchronizer<ApproxTimePolicy> sync(ApproxTimePolicy(100), pose_sub, imu_sub, wheel_sub, twist_sub, cmd_sub, steer_sub);
-  sync.registerCallback(boost::bind(&test_helper::ModelTestHelper::vehicleStateSyncCallback, &model_test_helper, _1, _2, _3, _4, _5, _6));
+  VehicleStateFunctor veh_functor(model_test_helper);
+  sync.registerCallback(boost::bind<void>(veh_functor, _1, _2, _3, _4, _5, _6));
 
   // Playback bag file to collect data
   for(const rosbag::MessageInstance m : view)

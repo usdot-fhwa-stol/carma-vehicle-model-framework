@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>passenger_car_dynamic_model</name>
+  <name>passenger_car_kinematic_model</name>
   <version>0.1.0</version>
   <description>
     This package provides a pluggable vehicle model for use with the lib_vehicle_model library in CARMA.
-    The model implemented in this package is a dynamics model based off tire properties and vehicle control transfer functions. 
+    The model implemented in this package is a kinematics model based off tire properties and vehicle control transfer functions. 
   </description>
   <maintainer email="carma@todo.todo">carma</maintainer>
   <license>Apache 2.0</license>
@@ -22,8 +22,6 @@
   <test_depend>automotive_platform_msgs</test_depend>
   <test_depend>roscpp</test_depend>
   <test_depend>model_test_tools</test_depend>
-
-
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

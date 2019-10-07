@@ -47,7 +47,6 @@ TEST(ODESOlver, rk4)
     [this](const ODESolver::State& state, const double& control, int tracker, ODESolver::StateDot& state_dot, const double t) -> void {
       state_dot[0] = 4 * exp(0.8*t) - 0.5*state[0];
       state_dot[1] = 4 * exp(0.8*t) - 3*state[1];
-      std::cerr << " ODE Call t: " << t << std::endl;
     },
     control_inputs.size(),
     timestep,
@@ -56,8 +55,6 @@ TEST(ODESOlver, rk4)
     ode_outputs,
     [this](const ODESolver::State& current, const double& control, int tracker, const double t, const ODESolver::State& initial_state, ODESolver::State& output) -> void {
       output = current;
-      std::cerr << " Obs Call t: " << t << std::endl;
-
     },
     tracker
   );

@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>passenger_car_kinematic_model</name>
+  <version>0.1.0</version>
+  <description>
+    This package provides a pluggable vehicle model for use with the lib_vehicle_model library in CARMA.
+    The model implemented in this package is a kinematics model based off tire properties and vehicle control transfer functions. 
+  </description>
+  <maintainer email="carma@todo.todo">carma</maintainer>
+  <license>Apache 2.0</license>
+  <author email="carma@todo.todo">carma</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>lib_vehicle_model</depend>
+  <test_depend>tf2</test_depend>
+  <test_depend>rosbag</test_depend>
+  <test_depend>message_filters</test_depend>
+  <test_depend>geometry_msgs</test_depend>
+  <test_depend>sensor_msgs</test_depend>
+  <test_depend>pacmod_msgs</test_depend>
+  <test_depend>autoware_msgs</test_depend>
+  <test_depend>automotive_platform_msgs</test_depend>
+  <test_depend>roscpp</test_depend>
+  <test_depend>model_test_tools</test_depend>
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <!-- Other tools can request additional information be placed here -->
+
+  </export>
+</package>

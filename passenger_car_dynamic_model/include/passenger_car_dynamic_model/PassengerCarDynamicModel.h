@@ -54,8 +54,12 @@ class PassengerCarDynamicModel: public lib_vehicle_model::VehicleMotionModel
     // Parameters
     double l_f_; // The distance from the center of mass to the front wheels axis along the vehicle center line in m.
     double l_r_; // The distance from the center of mass to the rear wheels axis along the vehicle center line in m. 
-    double R_ef_; // The vertical distance from the front axle to the ground when the vehicle is loaded. 
-    double R_er_; // The vertical distance from the rear axle to the ground when the vehicle is loaded. 
+    double ulR_f_; // The unloaded radius of the front tire. Unloaded means the tire is not supporting the weight of the vehicle.
+    double ulR_r_; // The unloaded radius of the rear tire. 
+    double lR_f_; // The loaded radius of the front tire.
+    double lR_r_; // The loaded radius of the rear tire.
+    double R_ef_; // The effective radius of the front tire for use in dynamics model. Generally defined relative to the loaded and unloaded radius dimensions.
+    double R_er_; // The effective radius of the rear tire for use in dynamics model. Generally defined relative to the loaded and unloaded radius dimensions.
     double C_sxf_; // The front longitudinal tire stiffness in N/unit slip. 
     double C_sxr_; // The rear longitudinal tire stiffness in N/unit slip. 
     double C_ayf_; // The front tire cornering stiffness in N/rad. 
@@ -123,6 +127,16 @@ class PassengerCarDynamicModel: public lib_vehicle_model::VehicleMotionModel
      * @param d_fc The new steering command in rad
      */ 
     double funcD_f(const double d_f, const double d_fc, const double t, std::vector<TwoStepPID>& pid_tracker) const;
+
+    /**
+     * @brief Helper function to compute the effective wheel radius from the loaded and unloaded wheel radius.
+     * 
+     * @param unloaded_radius The unloaded tire radius in m;
+     * @param loaded_radius The loaded tire radius in m
+     * 
+     * @return The effective wheel radius in m;
+     */ 
+    double computeEffectiveWheelRadius(const double unloaded_radius, const double loaded_radius) const;
     
 
   public:

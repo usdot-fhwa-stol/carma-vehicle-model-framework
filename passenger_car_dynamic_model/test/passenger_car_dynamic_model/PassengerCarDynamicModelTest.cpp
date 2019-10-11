@@ -83,8 +83,10 @@ void initializeParamServer (
   std::shared_ptr<MockParamServer> mock_param_server,
   double length_to_f,
   double length_to_r,
-  double effective_wheel_radius_f,
-  double effective_wheel_radius_r,
+  double unloaded_wheel_radius_f,
+  double unloaded_wheel_radius_r,
+  double loaded_wheel_radius_f,
+  double loaded_wheel_radius_r,
   double tire_longitudinal_stiffness_f,
   double tire_longitudinal_stiffness_r,
   double tire_cornering_stiffness_f,
@@ -103,8 +105,10 @@ void initializeParamServer (
 
     EXPECT_CALL(*mock_param_server, getParam("length_to_f", A<double&>())).WillRepeatedly(DoAll(set_double(length_to_f), Return(true)));
     EXPECT_CALL(*mock_param_server, getParam("length_to_r", A<double&>())).WillRepeatedly(DoAll(set_double(length_to_r), Return(true)));
-    EXPECT_CALL(*mock_param_server, getParam("effective_wheel_radius_f", A<double&>())).WillRepeatedly(DoAll(set_double(effective_wheel_radius_f), Return(true)));
-    EXPECT_CALL(*mock_param_server, getParam("effective_wheel_radius_r", A<double&>())).WillRepeatedly(DoAll(set_double(effective_wheel_radius_r), Return(true)));
+    EXPECT_CALL(*mock_param_server, getParam("unloaded_wheel_radius_f", A<double&>())).WillRepeatedly(DoAll(set_double(unloaded_wheel_radius_f), Return(true)));
+    EXPECT_CALL(*mock_param_server, getParam("unloaded_wheel_radius_r", A<double&>())).WillRepeatedly(DoAll(set_double(unloaded_wheel_radius_r), Return(true)));
+    EXPECT_CALL(*mock_param_server, getParam("loaded_wheel_radius_f", A<double&>())).WillRepeatedly(DoAll(set_double(loaded_wheel_radius_f), Return(true)));
+    EXPECT_CALL(*mock_param_server, getParam("loaded_wheel_radius_r", A<double&>())).WillRepeatedly(DoAll(set_double(loaded_wheel_radius_r), Return(true)));
     EXPECT_CALL(*mock_param_server, getParam("tire_longitudinal_stiffness_f", A<double&>())).WillRepeatedly(DoAll(set_double(tire_longitudinal_stiffness_f), Return(true)));
     EXPECT_CALL(*mock_param_server, getParam("tire_longitudinal_stiffness_r", A<double&>())).WillRepeatedly(DoAll(set_double(tire_longitudinal_stiffness_r), Return(true)));
     EXPECT_CALL(*mock_param_server, getParam("tire_cornering_stiffness_f", A<double&>())).WillRepeatedly(DoAll(set_double(tire_cornering_stiffness_f), Return(true)));
@@ -133,8 +137,10 @@ TEST(PassengerCarDynamicModel, setParameterServer)
   // Params for this vehicle model
   const double length_to_f = 1.24;
   const double length_to_r = 1.538;
-  const double effective_wheel_radius_f = 0.355;
-  const double effective_wheel_radius_r = 0.3625;
+  const double unloaded_wheel_radius_f = 0.355;
+  const double unloaded_wheel_radius_r = 0.3625;
+  const double loaded_wheel_radius_f = 0.355;
+  const double loaded_wheel_radius_r = 0.3625;
   const double tire_longitudinal_stiffness_f = 90.0; // TODO
   const double tire_longitudinal_stiffness_r = 90.0; // TODO
   const double tire_cornering_stiffness_f = 116669.202;
@@ -154,8 +160,10 @@ TEST(PassengerCarDynamicModel, setParameterServer)
     mock_param_server,
     length_to_f,
     length_to_r,
-    effective_wheel_radius_f,
-    effective_wheel_radius_r,
+    unloaded_wheel_radius_f,
+    unloaded_wheel_radius_r,
+    loaded_wheel_radius_f,
+    loaded_wheel_radius_r,
     tire_longitudinal_stiffness_f,
     tire_longitudinal_stiffness_r,
     tire_cornering_stiffness_f,
@@ -199,8 +207,10 @@ TEST(PassengerCarDynamicModel, predict_no_control)
 // Params for this vehicle model
   const double length_to_f = 2.4384;
   const double length_to_r = 2.4384;
-  const double effective_wheel_radius_f = 0.3048; //m
-  const double effective_wheel_radius_r = 0.3048; //m
+  const double unloaded_wheel_radius_f = 0.3048;
+  const double unloaded_wheel_radius_r = 0.3048;
+  const double loaded_wheel_radius_f = 0.3048;
+  const double loaded_wheel_radius_r = 0.3048;
   const double tire_longitudinal_stiffness_f = 14166.0; // TODO
   const double tire_longitudinal_stiffness_r = 14166.0; // TODO
   const double tire_cornering_stiffness_f = 51560.0;
@@ -220,8 +230,10 @@ TEST(PassengerCarDynamicModel, predict_no_control)
     mock_param_server,
     length_to_f,
     length_to_r,
-    effective_wheel_radius_f,
-    effective_wheel_radius_r,
+    unloaded_wheel_radius_f,
+    unloaded_wheel_radius_r,
+    loaded_wheel_radius_f,
+    loaded_wheel_radius_r,
     tire_longitudinal_stiffness_f,
     tire_longitudinal_stiffness_r,
     tire_cornering_stiffness_f,
@@ -252,7 +264,7 @@ TEST(PassengerCarDynamicModel, predict_no_control)
   vs.longitudinal_vel = 5;
   vs.lateral_vel = 0;
   vs.yaw_rate = 0;
-  vs.front_wheel_rotation_rate = vs.longitudinal_vel / effective_wheel_radius_f;
+  vs.front_wheel_rotation_rate = vs.longitudinal_vel / loaded_wheel_radius_f; // In this unit test the effective radius = the loaded_wheel_radius
   vs.rear_wheel_rotation_rate = vs.front_wheel_rotation_rate;
   vs.steering_angle = 0;
   vs.trailer_angle = 0;
@@ -499,8 +511,10 @@ TEST(PassengerCarDynamicModel, evaluate_steering_pred_accuracy)
   // NOTE: The values here are from the measurements of the STOL Blue Lexus in Sep. 2019
   const double length_to_f = 1.24;
   const double length_to_r = 1.538;
-  const double effective_wheel_radius_f = 0.355;
-  const double effective_wheel_radius_r = 0.3625;
+  const double unloaded_wheel_radius_f = 0.38354;
+  const double unloaded_wheel_radius_r = 0.38354;
+  const double loaded_wheel_radius_f = 0.355;
+  const double loaded_wheel_radius_r = 0.3625;
   const double tire_longitudinal_stiffness_f = 90.0; // TODO
   const double tire_longitudinal_stiffness_r = 90.0; // TODO
   const double tire_cornering_stiffness_f = 116669.202;
@@ -522,8 +536,10 @@ TEST(PassengerCarDynamicModel, evaluate_steering_pred_accuracy)
     mock_param_server,
     length_to_f,
     length_to_r,
-    effective_wheel_radius_f,
-    effective_wheel_radius_r,
+    unloaded_wheel_radius_f,
+    unloaded_wheel_radius_r,
+    loaded_wheel_radius_f,
+    loaded_wheel_radius_r,
     tire_longitudinal_stiffness_f,
     tire_longitudinal_stiffness_r,
     tire_cornering_stiffness_f,
@@ -688,8 +704,10 @@ TEST(PassengerCarDynamicModel, DISABLED_find_steering_pid)
   // NOTE: The values here are from the measurements of the STOL Blue Lexus in Sep. 2019
   const double length_to_f = 1.24;
   const double length_to_r = 1.538;
-  const double effective_wheel_radius_f = 0.355;
-  const double effective_wheel_radius_r = 0.3625;
+  const double unloaded_wheel_radius_f = 0.38354;
+  const double unloaded_wheel_radius_r = 0.38354;
+  const double loaded_wheel_radius_f = 0.355;
+  const double loaded_wheel_radius_r = 0.3625;
   const double tire_longitudinal_stiffness_f = 90.0; // TODO
   const double tire_longitudinal_stiffness_r = 90.0; // TODO
   const double tire_cornering_stiffness_f = 116669.202;
@@ -711,8 +729,10 @@ TEST(PassengerCarDynamicModel, DISABLED_find_steering_pid)
     mock_param_server,
     length_to_f,
     length_to_r,
-    effective_wheel_radius_f,
-    effective_wheel_radius_r,
+    unloaded_wheel_radius_f,
+    unloaded_wheel_radius_r,
+    loaded_wheel_radius_f,
+    loaded_wheel_radius_r,
     tire_longitudinal_stiffness_f,
     tire_longitudinal_stiffness_r,
     tire_cornering_stiffness_f,
@@ -832,8 +852,10 @@ TEST(PassengerCarDynamicModel, evaluate_overall_pred)
   // NOTE: The values here are from the measurements of the STOL Blue Lexus in Sep. 2019
   const double length_to_f = 1.24;
   const double length_to_r = 1.538;
-  const double effective_wheel_radius_f = 0.355;
-  const double effective_wheel_radius_r = 0.3625;
+  const double unloaded_wheel_radius_f = 0.38354;
+  const double unloaded_wheel_radius_r = 0.38354;
+  const double loaded_wheel_radius_f = 0.355;
+  const double loaded_wheel_radius_r = 0.3625;
   const double tire_longitudinal_stiffness_f = 90.0; // TODO
   const double tire_longitudinal_stiffness_r = 90.0; // TODO
   const double tire_cornering_stiffness_f = 116669.202;
@@ -855,8 +877,10 @@ TEST(PassengerCarDynamicModel, evaluate_overall_pred)
     mock_param_server,
     length_to_f,
     length_to_r,
-    effective_wheel_radius_f,
-    effective_wheel_radius_r,
+    unloaded_wheel_radius_f,
+    unloaded_wheel_radius_r,
+    loaded_wheel_radius_f,
+    loaded_wheel_radius_r,
     tire_longitudinal_stiffness_f,
     tire_longitudinal_stiffness_r,
     tire_cornering_stiffness_f,

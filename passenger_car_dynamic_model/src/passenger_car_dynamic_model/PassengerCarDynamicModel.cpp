@@ -41,8 +41,10 @@ void PassengerCarDynamicModel::setParameterServer(std::shared_ptr<ParameterServe
   // Load Parameters
   bool l_f_param               = param_server_->getParam("length_to_f", l_f_);
   bool l_r_param               = param_server_->getParam("length_to_r", l_r_);
-  bool R_f_param               = param_server_->getParam("effective_wheel_radius_f", R_ef_);
-  bool R_r_param               = param_server_->getParam("effective_wheel_radius_r", R_er_);
+  bool ulR_f_param               = param_server_->getParam("unloaded_wheel_radius_f", ulR_f_);
+  bool ulR_r_param               = param_server_->getParam("unloaded_wheel_radius_r", ulR_r_);
+  bool lR_f_param               = param_server_->getParam("loaded_wheel_radius_f", lR_f_);
+  bool lR_r_param               = param_server_->getParam("loaded_wheel_radius_r", lR_r_);
   bool f_long_stiff_param      = param_server_->getParam("tire_longitudinal_stiffness_f", C_sxf_);
   bool r_long_stiff_param      = param_server_->getParam("tire_longitudinal_stiffness_r", C_sxr_);
   bool f_lat_stiff_param       = param_server_->getParam("tire_cornering_stiffness_f", C_ayf_);
@@ -59,7 +61,8 @@ void PassengerCarDynamicModel::setParameterServer(std::shared_ptr<ParameterServe
   bool top_speed_param         = param_server_->getParam("top_speed", top_speed_);
 
   // Check if all the required parameters could be loaded
-  if (!(l_f_param && l_r_param && R_f_param && R_r_param
+  if (!(l_f_param && l_r_param && ulR_f_param && ulR_r_param
+         && lR_f_param && lR_r_param
          && f_long_stiff_param && r_long_stiff_param && f_lat_stiff_param && r_lat_stiff_param 
          && inertia_param && mass_param 
          && steer_p_param && steer_i_param && steer_d_param
@@ -71,8 +74,10 @@ void PassengerCarDynamicModel::setParameterServer(std::shared_ptr<ParameterServe
     msg << "One of the required parameters could not be found or read " 
       << " length_to_f: " << l_f_param 
       << " length_to_r: " << l_r_param 
-      << " effective_wheel_radius_f: " << R_f_param 
-      << " effective_wheel_radius_r: " << R_r_param 
+      << " unloaded_wheel_radius_f: " << ulR_f_param 
+      << " unloaded_wheel_radius_r: " << ulR_r_param 
+      << " loaded_wheel_radius_f: " << lR_f_param 
+      << " loaded_wheel_radius_r: " << lR_r_param
       << " tire_longitudinal_stiffness_f: " << f_long_stiff_param
       << " tire_longitudinal_stiffness_r: " << r_long_stiff_param
       << " tire_cornering_stiffness_f: " << f_lat_stiff_param 
@@ -94,6 +99,9 @@ void PassengerCarDynamicModel::setParameterServer(std::shared_ptr<ParameterServe
 
   // If params are valid compute the max wheel rotation rate
   max_wheel_rotation_rate_ = top_speed_ / R_ef_; // (m/s) / radius = rad/s
+  // Compute the effective wheel radius
+  R_ef_ = computeEffectiveWheelRadius(ulR_f_, lR_f_);
+  R_er_ = computeEffectiveWheelRadius(ulR_r_, lR_r_);
 }
 
 std::vector<VehicleState> PassengerCarDynamicModel::predict(const VehicleState& initial_state,
@@ -343,5 +351,12 @@ double PassengerCarDynamicModel::funcD_f(const double d_f, const double d_fc, co
 
   pid_tracker[0].setSetpoint(d_fc);
   return pid_tracker[0].computeOutput(d_f, t);
+}
+
+/**
+ * Math based on figure 3.35 in R. N. Jazar, "Vehicle dynamics: theory and application" Springer, 2008.
+ */ 
+inline double PassengerCarDynamicModel::computeEffectiveWheelRadius(const double unloaded_radius, const double loaded_radius) const {
+  return unloaded_radius - ((unloaded_radius - loaded_radius) / 3.0);
 }
 

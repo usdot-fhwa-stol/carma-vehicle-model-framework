@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>passenger_car_dynamic_model</name>
-  <version>0.1.0</version>
+  <version>1.0.0</version>
   <description>
     This package provides a pluggable vehicle model for use with the lib_vehicle_model library in CARMA.
     The model implemented in this package is a dynamics model based off tire properties and vehicle control transfer functions. 

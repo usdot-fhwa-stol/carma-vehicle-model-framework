@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>model_test_tools</name>
-  <version>0.1.0</version>
+  <version>1.0.0</version>
   <description>
     Package meant to assist in the writing of unit tests for vehicle models
   </description>

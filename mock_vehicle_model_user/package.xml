@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>mock_vehicle_model_user</name>
-  <version>1.0.0</version>
+  <version>3.1.0</version>
   <description>Node demonstrating basic use of the lib_vehicle_model package by leveraging the mock_vehicle_model_shared_lib</description>
   <maintainer email="carma@todo.todo">carma</maintainer>
   <license>Apache 2.0</license>

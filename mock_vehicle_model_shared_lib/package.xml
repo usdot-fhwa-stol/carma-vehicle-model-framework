@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>mock_vehicle_model_shared_lib</name>
-  <version>1.0.0</version>
+  <version>3.1.0</version>
   <description>
     Example package demonstrating how to create a vehicle model shared library for use with the lib_vehicle_model package
   </description>

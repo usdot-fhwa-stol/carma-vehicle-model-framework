@@ -26,19 +26,17 @@
 #include <lib_vehicle_model/ParameterServer.h>
  
 /**
- * @class PassengerCarDynamicModel
- * @brief Class which implements a dynamic vehicle model for front wheel drive passenger cars
- * 
- * The details of the math in this class can be found in the PassengerCarDynamicBicycleModel design document
+ * @class PassengerCarKinematicModel
+ * @brief Class which implements a very simple kinematic vehicle bicycle model for front wheel drive passenger cars
  * 
  * NOTE: This class does not support trailers at this time. The trailer angle will remain unchanged during integration
- * 
+ *       Additionally, the lateral velocity will remain unchanged
  */
-class PassengerCarDynamicModel: public lib_vehicle_model::VehicleMotionModel
+class PassengerCarKinematicModel: public lib_vehicle_model::VehicleMotionModel
 {
   private:
 
-    const size_t ODE_STATE_SIZE = 9; // Number of elements of VehicleState that are accounted for in this model
+    const size_t ODE_STATE_SIZE = 3; // Number of elements of VehicleState that are accounted for in this model
     const size_t FULL_STATE_SIZE = 12; // Total number of elements in a CARMA VehicleState 
 
     // Handles to callback functions
@@ -49,21 +47,16 @@ class PassengerCarDynamicModel: public lib_vehicle_model::VehicleMotionModel
     std::shared_ptr<lib_vehicle_model::ParameterServer> param_server_;
     
     // Parameters
-    double l_f_; // The distance from the center of mass to the front wheels axis along the vehicle center line in m.
-    double l_r_; // The distance from the center of mass to the rear wheels axis along the vehicle center line in m. 
+    double l_; // Wheel base in m
     double R_ef_; // The vertical distance from the front axle to the ground when the vehicle is loaded. 
     double R_er_; // The vertical distance from the rear axle to the ground when the vehicle is loaded. 
-    double C_sx_; // The longitudinal tire stiffness in N/unit slip. 
-    double C_ay_; // The tire cornering stiffness in N/rad. 
-    double I_z_; // The moment of inertia of the vehicle about its center of mass in kgm^2
-    double m_; // The vehicle mass in kg.
 
     /*
      * @brief Function describing the ODE system which defines the vehicle equations of motion
      * 
      * This function matches the ODESolver::ODEFunction definition
      */ 
-    void DynamicCarODE(const lib_vehicle_model::ODESolver::State& state,
+    void KinematicCarODE(const lib_vehicle_model::ODESolver::State& state,
       const lib_vehicle_model::VehicleControlInput& control,
       double& prev_time,
       lib_vehicle_model::ODESolver::StateDot& state_dot,
@@ -84,46 +77,19 @@ class PassengerCarDynamicModel: public lib_vehicle_model::VehicleMotionModel
       lib_vehicle_model::ODESolver::State& output
     ) const;
 
-    /**
-     * @brief Helper function defines the transfer function which converts new velocity commands into front wheel rotation rate rates of change
-     * 
-     * @param w_f The current front wheel speed
-     * @param w_r The current rear wheel speed
-     * @param V_c The new velocity command in m/s
-     */ 
-    double funcW_f(const double w_f, const double w_r, const double V_c) const;
-
-    /**
-     * @brief Helper function defines the transfer function which converts new velocity commands into rear wheel rotation rate rates of change
-     * 
-     * @param w_f The current front wheel speed
-     * @param w_r The current rear wheel speed
-     * @param V_c The new velocity command in m/s
-     */ 
-    double funcW_r(const double w_f, const double w_r, const double V_c) const;
-
-    /**
-     * @brief Helper function defines the transfer function which converts new steering commands into steering rates of change
-     * 
-     * @param d_f The current steering angle in rad
-     * @param d_fc The new steering command in rad
-     */ 
-    double funcD_f(const double d_f, const double d_fc) const;
-    
-
   public:
 
     /**
      * @brief Constructor 
      * 
      */ 
-    PassengerCarDynamicModel();
+    PassengerCarKinematicModel();
 
     /**
      * @brief Destructor as required by interface
      * 
      */ 
-    ~PassengerCarDynamicModel();
+    ~PassengerCarKinematicModel();
 
     //
     // Overriden interface functions

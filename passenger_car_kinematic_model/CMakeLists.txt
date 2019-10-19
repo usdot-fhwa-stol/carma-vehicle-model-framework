@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(mock_vehicle_model_shared_lib)
+project(passenger_car_kinematic_model)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
@@ -14,7 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+# find_package(Boost REQUIRED)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -106,7 +106,6 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
   CATKIN_DEPENDS lib_vehicle_model
-#  DEPENDS system_lib
 )
 
 ###########
@@ -124,14 +123,14 @@ include_directories(
 ## Declare a C++ library
 ## Declare as a SHARED library for dynamic linking
  add_library(${PROJECT_NAME} SHARED
-  src/EntryPoint.cpp
-  src/MockVehicleModel.cpp
+  src/${PROJECT_NAME}/EntryPoint.cpp
+  src/${PROJECT_NAME}/PassengerCarKinematicModel.cpp
  )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
@@ -193,11 +192,73 @@ install(TARGETS ${PROJECT_NAME}
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_temp.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
+if (CATKIN_ENABLE_TESTING)
+  # Add testing only dependencies
+  find_package ( tf2 REQUIRED)
+  find_package ( rosbag REQUIRED)
+  find_package ( message_filters REQUIRED)
+  find_package ( geometry_msgs REQUIRED)
+  find_package ( sensor_msgs REQUIRED)
+  find_package ( pacmod_msgs REQUIRED)
+  find_package ( autoware_msgs REQUIRED)
+  find_package ( automotive_platform_msgs REQUIRED)
+  find_package ( roscpp REQUIRED)
+  find_package ( Boost REQUIRED)
+  find_package ( model_test_tools REQUIRED)
+
+  include_directories(
+    ${tf2_INCLUDE_DIRS}
+    ${rosbag_INCLUDE_DIRS}
+    ${message_filters_INCLUDE_DIRS}
+    ${geometry_msgs_INCLUDE_DIRS}
+    ${sensor_msgs_INCLUDE_DIRS}
+    ${pacmod_msgs_INCLUDE_DIRS}
+    ${autoware_msgs_INCLUDE_DIRS}
+    ${automotive_platform_msgs_INCLUDE_DIRS}
+    ${roscpp_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
+    ${model_test_tools_INCLUDE_DIRS}
+  )
+
+  catkin_add_gmock(${PROJECT_NAME}-test 
+    test/TestEntryPoint.cpp
+    test/${PROJECT_NAME}/PassengerCarKinematicModelTest.cpp
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test # Add test directory as working directory for unit tests
+  )
+
+  target_link_libraries(${PROJECT_NAME}-test lib_vehicle_model 
+    ${PROJECT_NAME} 
+    ${catkin_LIBRARIES}
+    ${tf2_LIBRARIES}
+    ${rosbag_LIBRARIES}
+    ${message_filters_LIBRARIES}
+    ${geometry_msgs_LIBRARIES}
+    ${sensor_msgs_LIBRARIES}
+    ${pacmod_msgs_LIBRARIES}
+    ${autoware_msgs_LIBRARIES}
+    ${automotive_platform_msgs_LIBRARIES}
+    ${roscpp_LIBRARIES}
+    ${Boost_LIBRARIES}
+    ${model_test_tools_LIBRARIES}
+  )
+
+  add_dependencies( ${PROJECT_NAME}-test lib_vehicle_model 
+    ${${PROJECT_NAME}_EXPORTED_TARGETS} 
+    ${catkin_EXPORTED_TARGETS}
+    ${tf2_EXPORTED_TARGETS}
+    ${rosbag_EXPORTED_TARGETS}
+    ${message_filters_EXPORTED_TARGETS}
+    ${geometry_msgs_EXPORTED_TARGETS}
+    ${sensor_msgs_EXPORTED_TARGETS}
+    ${pacmod_msgs_EXPORTED_TARGETS}
+    ${autoware_msgs_EXPORTED_TARGETS}
+    ${automotive_platform_msgs_EXPORTED_TARGETS}
+    ${roscpp_EXPORTED_TARGETS}
+    ${Boost_EXPORTED_TARGETS}
+    ${model_test_tools_EXPORTED_TARGETS}
+  )
+
+endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-

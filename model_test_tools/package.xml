@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>model_test_tools</name>
+  <version>1.0.0</version>
+  <description>
+    Package meant to assist in the writing of unit tests for vehicle models
+  </description>
+  <maintainer email="carma@todo.todo">carma</maintainer>
+  <license>Apache 2.0</license>
+  <author email="carma@todo.todo">carma</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>lib_vehicle_model</depend>
+  <depend>tf2</depend>
+  <depend>geometry_msgs</depend>
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <!-- Other tools can request additional information be placed here -->
+  </export>
+</package>

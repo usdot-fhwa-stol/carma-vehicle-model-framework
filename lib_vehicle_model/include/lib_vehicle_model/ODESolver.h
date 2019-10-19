@@ -43,10 +43,10 @@ namespace lib_vehicle_model {
      * @param state The vector of values which define the initial state. Each element of this state must match an element of the state_dot vector
      * @param control An optional control object whose contents will be treated as constants during a step of integration
      * @param state_dot The vector which contains the current rates of change of the state vector with respect to t
-     * @param t The independant variable which the derivatives are derived against such as dx/dt.
+     * @param t The independent variable which the derivatives are derived against such as dx/dt.
      */
-    template<typename C>
-    using ODEFunction = std::function<void(const State& state, const C& control, StateDot& state_dot, double t)>;
+    template<typename C, typename T = int>
+    using ODEFunction = std::function<void(const State& state, const C& control, T& tracker, StateDot& state_dot, double t)>;
 
     /**
      * @brief Type alias for a function which will be called after each integration step. 
@@ -57,12 +57,12 @@ namespace lib_vehicle_model {
      *  
      * @param current The vector of values which define the initial state. Each element of this state must match an element of the state_dot vector
      * @param control A control object whose contents will be treated as constants during a step of integration
-     * @param t The value of the independant variable which the derivatives are derived against such as dx/dt.
-     * @param initial_state The initial state of the whole integration process
+     * @param t The value of the independent variable which the derivatives are derived against such as dx/dt.
+     * @param prev_final_state The previous final post step state
      * @param output The updated state vector which will be stored in the final integration output
      */
-    template<typename C>
-    using PostStepFunction = std::function<void(const State& current, const C& control, double t, const State& initial_state, State& output)>;
+    template<typename C, typename T>
+    using PostStepFunction = std::function<void(const State& current, const C& control, T& tracker, double t, const State& prev_final_state, State& output)>;
 
     /**
      * @brief Solve ODEs using Runge-Kutta 4th Order Integration
@@ -70,21 +70,23 @@ namespace lib_vehicle_model {
      * @tparam C The data type of the control variable
      * 
      * @param num_steps The number of samples which will be returned. 
-     * @param step_size The step size between independant variable samples of the ODE. 
+     * @param step_size The step size between independent variable samples of the ODE. 
      * @param initial_state The vector of values which define the initial state. The initial condition is defined as (0, initial_state).
      * @param controls A list of controls which will be applied as a constant during each integration step. If the list is shorter than the integration size the last element will be used for the remainder of the integration
+     * @param tracker An o TODO
      * @param output A list of output states seperated by step_size with an added length equal to num_steps. Elements of the list are tuples of (independant variable, state)
      * @param post_step_fun A function which will be called after each integration step. This function can be used to set state variables which are not being considered during integration
      */
 
-    template<typename C>
-    void rk4(const ODEFunction<C>& ode_func,
+    template<typename C, typename T>
+    void rk4(const ODEFunction<C,T>& ode_func,
       double num_steps,
       double step_size,
-      State& initial_state,
+      const State& initial_state,
       const std::vector<C>& controls,
       std::vector<std::tuple<double, State>>& output,
-      const PostStepFunction<C>& post_step_func
+      const PostStepFunction<C,T>& post_step_func,
+      T& tracker
     );
   }
 }

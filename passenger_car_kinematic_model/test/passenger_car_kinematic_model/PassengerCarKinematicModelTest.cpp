@@ -86,6 +86,7 @@ class ParameterInitializer {
     double loaded_wheel_radius_f_ = 0.355;
     double loaded_wheel_radius_r_ = 0.3625;
     double speed_kP_ = 0.8;
+    double steer_kP_ = 1.2;
 
 
   void initializeParamServer (
@@ -98,6 +99,7 @@ class ParameterInitializer {
     EXPECT_CALL(*mock_param_server, getParam("loaded_wheel_radius_f", A<double&>())).WillRepeatedly(DoAll(set_double(loaded_wheel_radius_f_), Return(true)));
     EXPECT_CALL(*mock_param_server, getParam("loaded_wheel_radius_r", A<double&>())).WillRepeatedly(DoAll(set_double(loaded_wheel_radius_r_), Return(true)));
     EXPECT_CALL(*mock_param_server, getParam("speed_kP", A<double&>())).WillRepeatedly(DoAll(set_double(speed_kP_), Return(true)));
+    EXPECT_CALL(*mock_param_server, getParam("steer_kP", A<double&>())).WillRepeatedly(DoAll(set_double(speed_kP_), Return(true)));
   }
 };
 

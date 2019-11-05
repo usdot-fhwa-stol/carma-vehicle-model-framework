@@ -36,7 +36,7 @@ class PassengerCarKinematicModel: public lib_vehicle_model::VehicleMotionModel
 {
   private:
 
-    const size_t ODE_STATE_SIZE = 4; // Number of elements of VehicleState that are accounted for in this model
+    const size_t ODE_STATE_SIZE = 5; // Number of elements of VehicleState that are accounted for in this model
     const size_t FULL_STATE_SIZE = 12; // Total number of elements in a CARMA VehicleState 
 
     // Handles to callback functions
@@ -57,6 +57,7 @@ class PassengerCarKinematicModel: public lib_vehicle_model::VehicleMotionModel
     double R_ef_; // The vertical distance from the front axle to the ground when the vehicle is loaded. 
     double R_er_; // The vertical distance from the rear axle to the ground when the vehicle is loaded. 
     double speed_kP_; // The proportional value used to convert error in current speed into acceleration
+    double steer_kP_; // The proportional value used to convert error in current steer into and target steer into steer rate
 
     /*
      * @brief Function describing the ODE system which defines the vehicle equations of motion
@@ -94,6 +95,9 @@ class PassengerCarKinematicModel: public lib_vehicle_model::VehicleMotionModel
      */ 
     double predictAccel(const double V, const double V_c) const;
     
+    // TODO comment
+    double predictSteerRate(const double d, const double d_fc) const;
+
     /**
      * @brief Helper function to compute the effective wheel radius from the loaded and unloaded wheel radius.
      * 

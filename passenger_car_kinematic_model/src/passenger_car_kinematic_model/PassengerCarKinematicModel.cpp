@@ -45,10 +45,12 @@ void PassengerCarKinematicModel::setParameterServer(std::shared_ptr<ParameterSer
   bool lR_f_param     = param_server_->getParam("loaded_wheel_radius_f", lR_f_);
   bool lR_r_param     = param_server_->getParam("loaded_wheel_radius_r", lR_r_);
   bool speed_kP_param = param_server_->getParam("speed_kP", speed_kP_);
+  bool steer_kP_param = param_server_->getParam("steer_kP", steer_kP_);
 
   // Check if all the required parameters could be loaded
   if (!(l_f_param && l_r_param && ulR_f_param 
-    && ulR_r_param && lR_f_param && lR_r_param && speed_kP_param)) {
+    && ulR_r_param && lR_f_param && lR_r_param 
+    && speed_kP_param && steer_kP_param)) {
 
     std::ostringstream msg;
     msg << "One of the required parameters could not be found or read " 
@@ -58,7 +60,8 @@ void PassengerCarKinematicModel::setParameterServer(std::shared_ptr<ParameterSer
       << " unloaded_wheel_radius_r: " << ulR_r_param
       << " loaded_wheel_radius_f: " << lR_f_param
       << " loaded_wheel_radius_r: " << lR_r_param
-      << " speed_kP: " << speed_kP_param;
+      << " speed_kP: " << speed_kP_param
+      << " steer_kP: " << steer_kP_param;
 
     throw std::invalid_argument(msg.str());
   }
@@ -112,6 +115,7 @@ std::vector<VehicleState> PassengerCarKinematicModel::predict(const VehicleState
     state[1]  = initial_state.Y_pos_global;
     state[2]  = initial_state.orientation;
     state[3]  = initial_state.longitudinal_vel; // TODO if the lateral velocity is accounted for then this needs to be a magnitude as well
+    state[4]  = initial_state.steering_angle;
 
     double prev_time = 0.0;
 
@@ -170,23 +174,25 @@ void PassengerCarKinematicModel::KinematicCarODE(const lib_vehicle_model::ODESol
   const double V_c  = control.target_velocity;        // Velocity command
 
   //std::cerr << "V_c: " << V_c << "d_fc: " << d_fc << std::endl;
-  // State = [X, Y, Theta, V]
+  // State = [X, Y, Theta, V, d]
   const double X     = state[0];
   const double Y     = state[1];
   const double Theta = state[2];
   const double V     = state[3];
+  const double d     = state[4];
 
   // Ensure state_dot is the same size as state.  Zero out all values.
   state_dot.resize(state.size(), 0);
 
   // Compute total vehicle slip
-  const double beta = atan(tan(d_fc) * l_r_ / wheel_base_);
-  
+  const double beta = atan(tan(d) * l_r_ / wheel_base_);
+
   // Compute state_dot
-  state_dot[0] = V * cos(Theta + beta);   // X-dot
-  state_dot[1] = V * sin(Theta + beta);   // Y-dot
-  state_dot[2] = (V / l_r_) * sin(beta);  // Theta-dot
-  state_dot[3] = predictAccel(V, V_c);    // V
+  state_dot[0] = V * cos(Theta + beta);      // X-dot
+  state_dot[1] = V * sin(Theta + beta);      // Y-dot
+  state_dot[2] = (V / l_r_) * sin(beta);     // Theta-dot
+  state_dot[3] = predictAccel(V, V_c);       // V
+  state_dot[4] = predictSteerRate(d, d_fc);  // Steer-dot
 
 }
 
@@ -204,6 +210,18 @@ double PassengerCarKinematicModel::predictAccel(const double V, const double V_c
   }
 
   double P = kP * (V_c - V);
+
+  return std::min(std::max(P, -max_value), max_value);// TODO get these max output values set correctly
+}
+
+double PassengerCarKinematicModel::predictSteerRate(const double d, const double d_fc) const {
+  double kP = steer_kP_;
+  double max_value = 0.333333333; // 0.333333333; TODO
+  // if (fabs(d_fc - d) < 0.523599) { // If the error is under 30 degrees reduce the response 
+  //   kP = kP * 0.8;
+  // }
+
+  double P = kP * (d_fc - d);
 
   return std::min(std::max(P, -max_value), max_value);// TODO get these max output values set correctly
 }
@@ -227,7 +245,7 @@ void PassengerCarKinematicModel::ODEPostStep(const lib_vehicle_model::ODESolver:
   output[5]  = dt == 0.0 ? 0.0 : (current[2] - prev_state[2]) / dt; // Yaw rate equals dTheta/dt
   output[6]  = output[3] / R_ef_; // Assume no slip. Velocity / radius = rotation rate
   output[7]  = output[3] / R_er_; // Assume no slip. 
-  output[8]  = control.target_steering_angle; // This model assumes instantaneous steering change
+  output[8]  = current[4];
   output[9]  = 0; // Model ignores trailer angle
   output[10] = control.target_steering_angle;
   output[11] = control.target_velocity;

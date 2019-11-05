@@ -51,27 +51,13 @@ include_directories(
   src/${PROJECT_NAME}/EntryPoint.cpp
   src/${PROJECT_NAME}/PassengerCarDynamicModel.cpp
   src/${PROJECT_NAME}/TwoStepPID.cpp
+  src/${PROJECT_NAME}/TwoStepLagModel.cpp
  )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-## Declare a C++ executable
-## With catkin_make all packages are built within a single CMake context
-## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/temp_node.cpp)
-
-## Rename C++ executable without prefix
-## The above recommended prefix causes long target names, the following renames the
-## target back to the shorter version for ease of user use
-## e.g. "rosrun someones_pkg node" instead of "rosrun someones_pkg someones_pkg_node"
-# set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME node PREFIX "")
-
-## Add cmake target dependencies of the executable
-## same as for the library above
-# add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}
@@ -82,16 +68,6 @@ target_link_libraries(${PROJECT_NAME}
 #############
 ## Install ##
 #############
-
-# all install targets should use catkin DESTINATION variables
-# See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
-
-## Mark executable scripts (Python etc.) for installation
-## in contrast to setup.py, you can choose the destination
-# install(PROGRAMS
-#   scripts/my_python_script
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
 
 ## Mark executables and/or libraries for installation
 install(TARGETS ${PROJECT_NAME}
@@ -132,6 +108,13 @@ if (CATKIN_ENABLE_TESTING)
   find_package ( roscpp REQUIRED)
   find_package ( Boost REQUIRED)
   find_package ( model_test_tools REQUIRED)
+  find_package ( sigpack REQUIRED)
+
+  find_package(Armadillo REQUIRED) # TODO REMOVE
+
+  message(STATUS "--------------------")
+  message(STATUS ${sigpack_INCLUDE_DIRS})
+  message(STATUS "--------------------")
 
   include_directories(
     ${tf2_INCLUDE_DIRS}
@@ -145,12 +128,15 @@ if (CATKIN_ENABLE_TESTING)
     ${roscpp_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
     ${model_test_tools_INCLUDE_DIRS}
+    ${sigpack_INCLUDE_DIRS}
+    ${ARMADILLO_INCLUDE_DIRS} # TODO REMOVE
   )
 
   catkin_add_gmock(${PROJECT_NAME}-test 
     test/${PROJECT_NAME}/TestEntryPoint.cpp
     test/${PROJECT_NAME}/PassengerCarDynamicModelTest.cpp
     test/${PROJECT_NAME}/TwoStepPIDTest.cpp
+    test/${PROJECT_NAME}/TwoStepLagModelTest.cpp
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test # Add test directory as working directory for unit tests
   )
 
@@ -168,6 +154,8 @@ if (CATKIN_ENABLE_TESTING)
     ${roscpp_LIBRARIES}
     ${Boost_LIBRARIES}
     ${model_test_tools_LIBRARIES}
+    ${sigpack_LIBRARIES}
+    ${ARMADILLO_LIBRARIES} # TODO REMOVE
   )
 
   add_dependencies( ${PROJECT_NAME}-test lib_vehicle_model 
@@ -184,6 +172,7 @@ if (CATKIN_ENABLE_TESTING)
     ${roscpp_EXPORTED_TARGETS}
     ${Boost_EXPORTED_TARGETS}
     ${model_test_tools_EXPORTED_TARGETS}
+    ${sigpack_EXPORTED_TARGETS}
   )
 
 endif()

@@ -36,6 +36,7 @@ TEST(TwoStepPID, testPID)
 
   ASSERT_NEAR(1.0, P.computeOutput(0.0, 1.0), 0.000000001); // No change as only P controller
 
+  // Test I Controller
   TwoStepPID I(0.0, 0.1, 0.0);
 
   I.setSetpoint(1.0);
@@ -76,4 +77,23 @@ TEST(TwoStepPID, testPID)
   D.updateMemory(0.0, 1.0);
 
   ASSERT_NEAR(-0.5, D.computeOutput(0.5, 2.0), 0.000000001); // Check prev error impacts result
+
+  // Evaluate reversing output check
+  TwoStepPID Drev(0.1, 0.0, 1.0);
+
+  Drev.setSetpoint(1.0);
+
+  Drev.updateMemory(0.0, 1.0);
+
+  ASSERT_NEAR(0.0, Drev.computeOutput(0.5, 2.0), 0.000000001); // Check prev error impacts result
+
+  // Test Output Max
+  TwoStepPID PMax(10, 0.0, 0.0);
+  PMax.setOutputMax(1);
+  PMax.setOutputMin(-1);
+  PMax.setSetpoint(100.0);
+  PMax.updateMemory(0.0, 0.0);
+  ASSERT_NEAR(1.0, PMax.computeOutput(0.0, 2.0), 0.000000001); // Check prev error impacts result
+  PMax.setSetpoint(-100.0);
+  ASSERT_NEAR(-1.0, PMax.computeOutput(0.0, 2.0), 0.000000001); // Check prev error impacts result
 }

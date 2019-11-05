@@ -41,9 +41,12 @@
 #include "lib_vehicle_model/ODESolver.h"
 #include "passenger_car_dynamic_model/PassengerCarDynamicModel.h"
 #include "model_test_tools/TestHelper.h"
+#include "sigpack.h"
+
 
 /**
  * This file unit tests the setParameterServer checker class
+ * // TOP
  */ 
 
 using ::testing::A;
@@ -128,7 +131,7 @@ void initializeParamServer (
 /**
  * Tests the setParameterServer function of the PassengerCarDynamicModel class
  */ 
-TEST(PassengerCarDynamicModel, setParameterServer)
+TEST(PassengerCarDynamicModel, DISABLED_setParameterServer)
 {
 
   // Setup param server
@@ -199,7 +202,7 @@ TEST(PassengerCarDynamicModel, setParameterServer)
 /**
  * Tests the predict (no control input) function of the PassengerCarDynamicModel 
  */ 
-TEST(PassengerCarDynamicModel, predict_no_control)
+TEST(PassengerCarDynamicModel, DISABLED_predict_no_control)
 {
     // Setup param server
   auto mock_param_server = std::make_shared<MockParamServer>();
@@ -369,7 +372,7 @@ TEST(PassengerCarDynamicModel, predict_no_control)
 /**
  * Tests the predict (with control input) function of the PassengerCarDynamicModel 
  */ 
-TEST(PassengerCarDynamicModel, predict_with_control)
+TEST(PassengerCarDynamicModel, DISABLED_predict_with_control)
 {
 
 }
@@ -475,7 +478,7 @@ TEST(PassengerCarDynamicModel, predict_with_control)
 //   }
 
 // }
-
+// STEER
 class SteeringStateFunctor {
   model_test_tools::SteeringTestHelper& helper_;
   public:
@@ -501,7 +504,7 @@ class SteeringStateFunctor {
  * 
  * NOTE: To view the data from this unit test set the steer_test_helper(true) for one rosbag at a time and look at the steering_sync.csv file
  */ 
-TEST(PassengerCarDynamicModel, evaluate_steering_pred_accuracy)
+TEST(PassengerCarDynamicModel, DISABLED_evaluate_steering_pred_accuracy)
 {
 
   // Setup param server
@@ -658,7 +661,7 @@ class VehicleStateFunctor {
     const autoware_msgs::VehicleCmdConstPtr cmd_msg,
     const automotive_platform_msgs::SteeringFeedbackConstPtr steer_msg)
     {
-      const double radPerSteeringRad = 0.05922;
+      const double radPerSteeringRad = 0.05922; // This was computed experimentally however it matches the the AStuff json file's 0.51/8.6 = 0.0593
       double stamp = pose_msg->header.stamp.toSec();
       lib_vehicle_model::VehicleState vs;
       vs.X_pos_global = pose_msg->pose.position.x;
@@ -867,7 +870,7 @@ TEST(PassengerCarDynamicModel, evaluate_overall_pred)
   const double steering_kI = 0.05;
   const double steering_kD = 0.0;
 
-  const double wheel_kP = 0.1;
+  const double wheel_kP = 0.7;
   const double wheel_kI = 0.0;
   const double wheel_kD = 0.0;
   double top_speed = 44.704;
@@ -947,8 +950,9 @@ TEST(PassengerCarDynamicModel, evaluate_overall_pred)
   // Playback bag file to collect data
   for(const rosbag::MessageInstance m : view)
   {
-    pose_sub.onMessageInstance(m);
+
     imu_sub.onMessageInstance(m);
+    pose_sub.onMessageInstance(m);
     wheel_sub.onMessageInstance(m);
     twist_sub.onMessageInstance(m);
     cmd_sub.onMessageInstance(m);
@@ -970,4 +974,575 @@ TEST(PassengerCarDynamicModel, evaluate_overall_pred)
 }
 
 
+class SpeedStateFunctor {
+  model_test_tools::SpeedTestHelper& helper_;
+  public:
+    SpeedStateFunctor(model_test_tools::SpeedTestHelper& helper) : helper_(helper)
+    {}
+
+    // Callback for ode observer during integration
+    void operator()(
+    const sensor_msgs::ImuConstPtr imu_msg, // Used for acceleration
+    const pacmod_msgs::WheelSpeedRptConstPtr wheel_msg, // Used for wheel speed
+    const autoware_msgs::VehicleCmdConstPtr cmd_msg, // Used for command speed
+    const gps_common::GPSFixConstPtr fix_msg // Used for ground speed
+  ) {
+
+    double stamp = fix_msg->header.stamp.toSec(); // Get Stamp
+
+    double cmd_vel = cmd_msg->ctrl_cmd.linear_velocity; // Get cmd_vel
+
+    model_test_tools::SpeedState ss; // Get speed state
+    ss.longitudinal_accel = imu_msg->linear_acceleration.y; // TODO this changes to x or y depending on car
+    ss.front_wheel_angular_vel = (wheel_msg->front_left_wheel_speed + wheel_msg->front_right_wheel_speed) / 2.0;
+    ss.rear_wheel_angular_vel = (wheel_msg->rear_left_wheel_speed + wheel_msg->rear_right_wheel_speed) / 2.0;
+    ss.longitudinal_vel = fix_msg->speed; // NOTE: This assumes forward driving
+
+    // Store data
+    helper_.syncCallback(stamp, ss, cmd_vel);
+  }
+};
+
+/**
+ * Tests the overall prediction performance of the model
+ * 
+ * NOTE: To view the data from this unit test set the steer_test_helper(true) for one rosbag at a time and look at the steering_sync.csv file
+ */ 
+TEST(PassengerCarDynamicModel, DISABLED_evaluate_overall_pred_todo)
+{
+
+  // Setup param server
+  auto mock_param_server = std::make_shared<MockParamServer>();
+
+  // Params for this vehicle model
+  // NOTE: The values here are from the measurements of the STOL Blue Lexus in Sep. 2019
+  const double length_to_f = 1.24;
+  const double length_to_r = 1.538;
+  const double unloaded_wheel_radius_f = 0.38354;
+  const double unloaded_wheel_radius_r = 0.38354;
+  const double loaded_wheel_radius_f = 0.355;
+  const double loaded_wheel_radius_r = 0.3625;
+  const double tire_longitudinal_stiffness_f = 90.0; // TODO
+  const double tire_longitudinal_stiffness_r = 90.0; // TODO
+  const double tire_cornering_stiffness_f = 116669.202;
+  const double tire_cornering_stiffness_r = 93993.8288;
+  const double moment_of_inertia = 4859.89;
+  const double vehicle_mass = 2271.5;
+  // NOTE: If steering model is changed then the steering PID must change as well
+  const double steering_kP = 1.0;
+  const double steering_kI = 0.05;
+  const double steering_kD = 0.0;
+
+  const double wheel_kP = 0.7;
+  const double wheel_kI = 0.0;
+  const double wheel_kD = 0.0;
+  double top_speed = 44.704;
+  double max_steering_rate = 0.333333333;
+
+  initializeParamServer(
+    mock_param_server,
+    length_to_f,
+    length_to_r,
+    unloaded_wheel_radius_f,
+    unloaded_wheel_radius_r,
+    loaded_wheel_radius_f,
+    loaded_wheel_radius_r,
+    tire_longitudinal_stiffness_f,
+    tire_longitudinal_stiffness_r,
+    tire_cornering_stiffness_f,
+    tire_cornering_stiffness_r,
+    moment_of_inertia,
+    vehicle_mass,
+    steering_kP,
+    steering_kI,
+    steering_kD,
+    wheel_kP,
+    wheel_kI,
+    wheel_kD,
+    top_speed,
+    max_steering_rate
+  );
+
+  // Try building with all params
+  PassengerCarDynamicModel pcm;
+  ASSERT_NO_THROW(pcm.setParameterServer(mock_param_server));
+
+  //// 
+  // Open Data File
+  ////
+  model_test_tools::SpeedTestHelper speed_test_helper(true);
+
+  rosbag::Bag bag;
+  bag.open("data/_2019-10-30-12-06-04_profile.bag", rosbag::bagmode::Read);
+  
+  std::string imu_tpc         = "/imu_raw";
+  std::string wheel_rpt_tpc   = "/pacmod/parsed_tx/wheel_speed_rpt";
+  std::string vehicle_cmd_tpc = "/vehicle_cmd";
+  std::string gps_tpc         = "/gnss_fix_fused";
+
+  std::vector<std::string> topics;
+  topics.push_back(imu_tpc); 
+  topics.push_back(wheel_rpt_tpc);
+  topics.push_back(vehicle_cmd_tpc);
+  topics.push_back(gps_tpc);
+
+  rosbag::View view(bag, rosbag::TopicQuery(topics));
+
+  model_test_tools::BagSubscriber<sensor_msgs::Imu> imu_sub(imu_tpc);
+  model_test_tools::BagSubscriber<pacmod_msgs::WheelSpeedRpt> wheel_sub(wheel_rpt_tpc);
+  model_test_tools::BagSubscriber<autoware_msgs::VehicleCmd> cmd_sub(vehicle_cmd_tpc);
+  model_test_tools::BagSubscriber<gps_common::GPSFix> gps_sub(gps_tpc);
+
+  typedef message_filters::sync_policies::ApproximateTime<
+    sensor_msgs::Imu, pacmod_msgs::WheelSpeedRpt,
+    autoware_msgs::VehicleCmd, gps_common::GPSFix
+    > ApproxTimePolicy;
+
+  // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
+  message_filters::Synchronizer<ApproxTimePolicy> sync(ApproxTimePolicy(100), imu_sub, wheel_sub, cmd_sub, gps_sub);
+  SpeedStateFunctor functor(speed_test_helper);
+  sync.registerCallback(boost::bind<void>(functor, _1, _2, _3, _4));
+
+
+  //
+  // Create Low Pass IIR filter for IMU acceleration data. Based on butterworth filter in matlab
+  // Order: 2nd
+  // Passband Freq: 21 Hz
+  sp::IIR_filt<double,double,double> imu_filter;
+  arma::vec3 b;
+  b[0] = 0.222955;
+  b[1] = 0.445910;
+  b[2] = 0.222955;
+
+  arma::vec3 a;
+  a[0] = 1.000000;
+  a[1] = -0.295200;
+  a[2] = 0.187020;
+
+  imu_filter.set_coeffs(b, a);
+
+  // Playback bag file to collect data
+  for(const rosbag::MessageInstance m : view)
+  {
+    // Filter IMU data. This should be done before going into model_test_tools so that the time_synchronizer does not impact the filter
+    sensor_msgs::ImuConstPtr s = m.instantiate<sensor_msgs::Imu>();
+    sensor_msgs::Imu newMsg;
+    if (s != NULL) { //(TODO this requires filtering )
+        newMsg.header = s->header;
+        newMsg.angular_velocity = s->angular_velocity;
+        newMsg.angular_velocity_covariance = s->angular_velocity_covariance;
+        newMsg.orientation = s->orientation;
+        newMsg.orientation_covariance = s->orientation_covariance;
+        newMsg.linear_acceleration = s->linear_acceleration;
+        newMsg.linear_acceleration_covariance = s->linear_acceleration_covariance;
+        newMsg.linear_acceleration.x = imu_filter(s->linear_acceleration.x);
+    }
+
+    sensor_msgs::ImuConstPtr imu_ptr(new sensor_msgs::Imu(newMsg));
+
+    imu_sub.onMessage(imu_ptr);
+    wheel_sub.onMessageInstance(m);
+    cmd_sub.onMessageInstance(m);
+    gps_sub.onMessageInstance(m);
+  }
+
+  bag.close();
+
+  //std::tuple<double,double> max_error_and_rmse = steer_test_helper.evaluateSteeringData(pcm);
+  speed_test_helper.evaluateData(pcm);
+  // double maxError = std::get<0>(max_error_and_rmse);
+  // double rmse = std::get<1>(max_error_and_rmse);
+
+  // ASSERT_LE(rmse, 0.03) << " RMSE larger then allowed " << "PID - P: " << steering_kP << " I: " << steering_kI << " D: " << steering_kD;
+  // ASSERT_LE(maxError, 0.12015) << " MaxError larger then allowed " << "PID - P: " << steering_kP << " I: " << steering_kI << " D: " << steering_kD;
+  
+  speed_test_helper.logData(speed_test_helper.last_forcast_);
+  speed_test_helper.sync_csv_file.close();
+}
+
+
+/**
+ * This Unit test is for finding initial PID values based on bag files.
+ * The determined values should not be taken as guaranteed optimal
+ * Instead they provide a reasonable starting point for tunning. 
+ * 
+ * NOTE: This test is currently disabled. To enable it remove the DISABLED_ prefix from the test name
+ */ 
+TEST(PassengerCarDynamicModel, DISABLED_find_speed_pid)
+{
+
+  // Create test helper. 
+  // NOTE: Set to true to record data to csv file
+  model_test_tools::SpeedTestHelper speed_test_helper(true); 
+
+  // Setup param server
+  auto mock_param_server = std::make_shared<MockParamServer>();
+
+  // Params for this vehicle model
+  // NOTE: The values here are from the measurements of the STOL Blue Lexus in Sep. 2019
+  const double length_to_f = 1.24;
+  const double length_to_r = 1.538;
+  const double unloaded_wheel_radius_f = 0.38354;
+  const double unloaded_wheel_radius_r = 0.38354;
+  const double loaded_wheel_radius_f = 0.355;
+  const double loaded_wheel_radius_r = 0.3625;
+  const double tire_longitudinal_stiffness_f = 90.0; // TODO
+  const double tire_longitudinal_stiffness_r = 90.0; // TODO
+  const double tire_cornering_stiffness_f = 116669.202;
+  const double tire_cornering_stiffness_r = 93993.8288;
+  const double moment_of_inertia = 4859.89;
+  const double vehicle_mass = 2271.5;
+  // NOTE: If steering model is changed then the steering PID must change as well
+  const double steering_kP = 1.0;
+  const double steering_kI = 0.05;
+  const double steering_kD = 0.0;
+
+  const double wheel_kP = 0.7;
+  const double wheel_kI = 0.0;
+  const double wheel_kD = 0.0;
+  double top_speed = 44.704;
+  double max_steering_rate = 0.333333333;
+
+  initializeParamServer(
+    mock_param_server,
+    length_to_f,
+    length_to_r,
+    unloaded_wheel_radius_f,
+    unloaded_wheel_radius_r,
+    loaded_wheel_radius_f,
+    loaded_wheel_radius_r,
+    tire_longitudinal_stiffness_f,
+    tire_longitudinal_stiffness_r,
+    tire_cornering_stiffness_f,
+    tire_cornering_stiffness_r,
+    moment_of_inertia,
+    vehicle_mass,
+    steering_kP,
+    steering_kI,
+    steering_kD,
+    wheel_kP,
+    wheel_kI,
+    wheel_kD,
+    top_speed,
+    max_steering_rate
+  );
+
+  // Try building with all params
+  PassengerCarDynamicModel pcm;
+  ASSERT_NO_THROW(pcm.setParameterServer(mock_param_server));
+
+  rosbag::Bag bag;
+  bag.open("data/_2019-10-30-11-57-22_5mps_6s.bag", rosbag::bagmode::Read);
+
+  ros::Time startTime(1572454657.9144); // For 5mps 1572454657.9144, for 10mps 1572454805.37492, for 5mps brake 1572454661.71489
+  ros::Time endTime(1572454661.71489); // For 5mps ramp 1572454661.71489, for 10mps ramp 1572454813.07975
+
+
+  std::string imu_tpc         = "/imu_raw";
+  std::string wheel_rpt_tpc   = "/pacmod/parsed_tx/wheel_speed_rpt";
+  std::string vehicle_cmd_tpc = "/vehicle_cmd";
+  std::string gps_tpc         = "/gnss_fix_fused";
+
+  std::vector<std::string> topics;
+  topics.push_back(imu_tpc); 
+  topics.push_back(wheel_rpt_tpc);
+  topics.push_back(vehicle_cmd_tpc);
+  topics.push_back(gps_tpc);
+
+  //rosbag::View view(bag, rosbag::TopicQuery(topics), startTime);
+  //rosbag::View view(bag, rosbag::TopicQuery(topics), startTime, endTime);
+  rosbag::View view(bag, rosbag::TopicQuery(topics));
+
+  model_test_tools::BagSubscriber<sensor_msgs::Imu> imu_sub(imu_tpc);
+  model_test_tools::BagSubscriber<pacmod_msgs::WheelSpeedRpt> wheel_sub(wheel_rpt_tpc);
+  model_test_tools::BagSubscriber<autoware_msgs::VehicleCmd> cmd_sub(vehicle_cmd_tpc);
+  model_test_tools::BagSubscriber<gps_common::GPSFix> gps_sub(gps_tpc);
+
+  typedef message_filters::sync_policies::ApproximateTime<
+    sensor_msgs::Imu, pacmod_msgs::WheelSpeedRpt,
+    autoware_msgs::VehicleCmd, gps_common::GPSFix
+    > ApproxTimePolicy;
+
+  // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
+  message_filters::Synchronizer<ApproxTimePolicy> sync(ApproxTimePolicy(100), imu_sub, wheel_sub, cmd_sub, gps_sub);
+  SpeedStateFunctor functor(speed_test_helper);
+  sync.registerCallback(boost::bind<void>(functor, _1, _2, _3, _4));
+
+
+  //
+  // Create Low Pass IIR filter for IMU acceleration data. Based on butterworth filter in matlab
+  // Order: 2nd
+  // Passband Freq: 21 Hz
+  sp::IIR_filt<double,double,double> imu_filter;
+  arma::vec3 b;
+  b[0] = 0.222955;
+  b[1] = 0.445910;
+  b[2] = 0.222955;
+
+  arma::vec3 a;
+  a[0] = 1.000000;
+  a[1] = -0.295200;
+  a[2] = 0.187020;
+
+  imu_filter.set_coeffs(b, a);
+
+  // Playback bag file to collect data
+  for(const rosbag::MessageInstance m : view)
+  {
+    // Filter IMU data. This should be done before going into model_test_tools so that the time_synchronizer does not impact the filter
+    sensor_msgs::ImuConstPtr s = m.instantiate<sensor_msgs::Imu>();
+    sensor_msgs::Imu newMsg;
+    if (s != NULL) { //(TODO this requires filtering )
+        newMsg.header = s->header;
+        newMsg.angular_velocity = s->angular_velocity;
+        newMsg.angular_velocity_covariance = s->angular_velocity_covariance;
+        newMsg.orientation = s->orientation;
+        newMsg.orientation_covariance = s->orientation_covariance;
+        newMsg.linear_acceleration = s->linear_acceleration;
+        newMsg.linear_acceleration_covariance = s->linear_acceleration_covariance;
+        newMsg.linear_acceleration.x = imu_filter(s->linear_acceleration.x);
+    }
+
+    sensor_msgs::ImuConstPtr imu_ptr(new sensor_msgs::Imu(newMsg));
+
+    imu_sub.onMessage(imu_ptr);
+    wheel_sub.onMessageInstance(m);
+    cmd_sub.onMessageInstance(m);
+    gps_sub.onMessageInstance(m);
+  }
+
+  bag.close();
+
+  std::vector<model_test_tools::SpeedState> bestForcast;
+  double minRMSE = 0;
+  double bestP = 0;
+  double bestI = 0;
+  double bestD = 0;
+  double minMaxError = 0;
+  double minAllowableMaxError = 0.175;
+  bool first = true;
+  for (double p = 0.0; p < 1.0; p += 0.05) { // P
+    if (-0.0000001 < p && p <0.0000001) { // Skip 0
+       continue;
+    } // Best result so far is 0.7 P with slope limiting to 8.13 and -8.13
+    EXPECT_CALL(*mock_param_server, getParam("wheel_kP", A<double&>())).WillRepeatedly(DoAll(set_double(0.7), Return(true)));
+
+    for (double i = -1; i < 1; i += 0.1) { // I
+      EXPECT_CALL(*mock_param_server, getParam("wheel_kI", A<double&>())).WillRepeatedly(DoAll(set_double(0.0), Return(true)));
+
+      for (double d = 0.0; d < 3.0; d += 0.1) { // D 
+        EXPECT_CALL(*mock_param_server, getParam("wheel_kD", A<double&>())).WillRepeatedly(DoAll(set_double(0.0), Return(true)));
+
+        pcm.setParameterServer(mock_param_server);
+        
+        std::tuple<double,double> max_error_and_rmse = speed_test_helper.evaluateData(pcm);
+        double maxError = std::get<0>(max_error_and_rmse);
+        double rmse = std::get<1>(max_error_and_rmse);
+
+        if (first) {
+          first = false;
+          minRMSE = rmse;
+          bestP = p;
+          bestI = i;
+          bestD = d;
+          bestForcast = speed_test_helper.last_forcast_;
+          minMaxError = maxError;
+        } else if (rmse < minRMSE && (minMaxError > maxError || maxError < minAllowableMaxError)) {
+          minRMSE = rmse;
+          bestP = p;
+          bestI = i;
+          bestD = d;
+          bestForcast = speed_test_helper.last_forcast_;
+          minMaxError = maxError;
+        }
+        break;
+      }
+      break;
+    }
+    std::cerr << "Current P " << p << std::endl;
+    std::cerr << "CurBest P: " <<  bestP << " I: " << bestI << " D: " << bestD << std::endl;
+    std::cerr << "CurBest RMSE: " << minRMSE << std::endl;
+    std::cerr << "CurBest MaxError: " << minMaxError << std::endl;
+    break;
+  }
+  speed_test_helper.logData(bestForcast);
+  speed_test_helper.sync_csv_file.close();
+  std::cerr << std::endl << "Best P: " <<  bestP << " I: " << bestI << " D: " << bestD << std::endl;
+  std::cerr << "Best RMSE: " << minRMSE << std::endl;
+  std::cerr << "Best MaxError: " << minMaxError << std::endl;
+}
+
+
+// /**
+//  * This Unit test is for finding initial PID values based on bag files.
+//  * The determined values should not be taken as guaranteed optimal
+//  * Instead they provide a reasonable starting point for tunning. 
+//  * 
+//  * NOTE: This test is currently disabled. To enable it remove the DISABLED_ prefix from the test name
+//  */ 
+// TEST(PassengerCarDynamicModel, find_speed_pid)
+// {
+
+//   // Create test helper. 
+//   // NOTE: Set to true to record data to csv file
+//   model_test_tools::SpeedTestHelper speed_test_helper(true); 
+
+//   // Setup param server
+//   auto mock_param_server = std::make_shared<MockParamServer>();
+
+//   // Params for this vehicle model
+//   // NOTE: The values here are from the measurements of the STOL Blue Lexus in Sep. 2019
+//   const double length_to_f = 1.24;
+//   const double length_to_r = 1.538;
+//   const double unloaded_wheel_radius_f = 0.38354;
+//   const double unloaded_wheel_radius_r = 0.38354;
+//   const double loaded_wheel_radius_f = 0.355;
+//   const double loaded_wheel_radius_r = 0.3625;
+//   const double tire_longitudinal_stiffness_f = 90.0; // TODO
+//   const double tire_longitudinal_stiffness_r = 90.0; // TODO
+//   const double tire_cornering_stiffness_f = 116669.202;
+//   const double tire_cornering_stiffness_r = 93993.8288;
+//   const double moment_of_inertia = 4859.89;
+//   const double vehicle_mass = 2271.5;
+//   // NOTE: If steering model is changed then the steering PID must change as well
+//   const double steering_kP = 1.0;
+//   const double steering_kI = 0.05;
+//   const double steering_kD = 0.0;
+
+//   const double wheel_kP = 0.1;
+//   const double wheel_kI = 0.0;
+//   const double wheel_kD = 0.0;
+//   double top_speed = 44.704;
+//   double max_steering_rate = 0.333333333;
+
+//   initializeParamServer(
+//     mock_param_server,
+//     length_to_f,
+//     length_to_r,
+//     unloaded_wheel_radius_f,
+//     unloaded_wheel_radius_r,
+//     loaded_wheel_radius_f,
+//     loaded_wheel_radius_r,
+//     tire_longitudinal_stiffness_f,
+//     tire_longitudinal_stiffness_r,
+//     tire_cornering_stiffness_f,
+//     tire_cornering_stiffness_r,
+//     moment_of_inertia,
+//     vehicle_mass,
+//     steering_kP,
+//     steering_kI,
+//     steering_kD,
+//     wheel_kP,
+//     wheel_kI,
+//     wheel_kD,
+//     top_speed,
+//     max_steering_rate
+//   );
+
+//   // Try building with all params
+//   PassengerCarDynamicModel pcm;
+//   ASSERT_NO_THROW(pcm.setParameterServer(mock_param_server));
+
+//   rosbag::Bag bag;
+//   bag.open("data/_2019-10-30-11-57-22_5mps_6s.bag", rosbag::bagmode::Read);
+
+//   ros::Time startTime(1572454661.71489); // For 5mps 1572454657.9144, for 10mps 1572454805.37492, for 5mps brake 1572454661.71489
+//   ros::Time endTime(1572454661.71489); // For 5mps ramp 1572454661.71489, for 10mps ramp 1572454813.07975
+
+
+//   std::string imu_tpc         = "/imu_raw";
+//   std::string wheel_rpt_tpc   = "/pacmod/parsed_tx/wheel_speed_rpt";
+//   std::string vehicle_cmd_tpc = "/vehicle_cmd";
+//   std::string gps_tpc         = "/gnss_fix_fused";
+
+//   std::vector<std::string> topics;
+//   topics.push_back(imu_tpc); 
+//   topics.push_back(wheel_rpt_tpc);
+//   topics.push_back(vehicle_cmd_tpc);
+//   topics.push_back(gps_tpc);
+
+//   rosbag::View view(bag, rosbag::TopicQuery(topics), startTime);
+//   //rosbag::View view(bag, rosbag::TopicQuery(topics), startTime, endTime);
+//   //rosbag::View view(bag, rosbag::TopicQuery(topics));
+
+//   model_test_tools::BagSubscriber<sensor_msgs::Imu> imu_sub(imu_tpc);
+//   model_test_tools::BagSubscriber<pacmod_msgs::WheelSpeedRpt> wheel_sub(wheel_rpt_tpc);
+//   model_test_tools::BagSubscriber<autoware_msgs::VehicleCmd> cmd_sub(vehicle_cmd_tpc);
+//   model_test_tools::BagSubscriber<gps_common::GPSFix> gps_sub(gps_tpc);
+
+//   typedef message_filters::sync_policies::ApproximateTime<
+//     sensor_msgs::Imu, pacmod_msgs::WheelSpeedRpt,
+//     autoware_msgs::VehicleCmd, gps_common::GPSFix
+//     > ApproxTimePolicy;
+
+//   // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
+//   message_filters::Synchronizer<ApproxTimePolicy> sync(ApproxTimePolicy(100), imu_sub, wheel_sub, cmd_sub, gps_sub);
+//   SpeedStateFunctor functor(speed_test_helper);
+//   sync.registerCallback(boost::bind<void>(functor, _1, _2, _3, _4));
+
+
+//   //
+//   // Create Low Pass IIR filter for IMU acceleration data. Based on butterworth filter in matlab
+//   // Order: 2nd
+//   // Passband Freq: 21 Hz
+//   sp::IIR_filt<double,double,double> imu_filter;
+//   arma::vec3 b;
+//   b[0] = 0.222955;
+//   b[1] = 0.445910;
+//   b[2] = 0.222955;
+
+//   arma::vec3 a;
+//   a[0] = 1.000000;
+//   a[1] = -0.295200;
+//   a[2] = 0.187020;
+
+//   imu_filter.set_coeffs(b, a);
+
+//   // Playback bag file to collect data
+//   for(const rosbag::MessageInstance m : view)
+//   {
+//     // Filter IMU data. This should be done before going into model_test_tools so that the time_synchronizer does not impact the filter
+//     sensor_msgs::ImuConstPtr s = m.instantiate<sensor_msgs::Imu>();
+//     sensor_msgs::Imu newMsg;
+//     if (s != NULL) { //(TODO this requires filtering )
+//         newMsg.header = s->header;
+//         newMsg.angular_velocity = s->angular_velocity;
+//         newMsg.angular_velocity_covariance = s->angular_velocity_covariance;
+//         newMsg.orientation = s->orientation;
+//         newMsg.orientation_covariance = s->orientation_covariance;
+//         newMsg.linear_acceleration = s->linear_acceleration;
+//         newMsg.linear_acceleration_covariance = s->linear_acceleration_covariance;
+//         newMsg.linear_acceleration.x = imu_filter(s->linear_acceleration.x);
+//     }
+
+//     sensor_msgs::ImuConstPtr imu_ptr(new sensor_msgs::Imu(newMsg));
+
+//     imu_sub.onMessage(imu_ptr);
+//     wheel_sub.onMessageInstance(m);
+//     cmd_sub.onMessageInstance(m);
+//     gps_sub.onMessageInstance(m);
+//   }
+
+//   bag.close();
+
+//   std::vector<model_test_tools::SpeedState> bestForcast;
+//   double minRMSE = 0;
+//   double bestP = 0;
+//   double bestI = 0;
+//   double bestD = 0;
+//   double minMaxError = 0;
+//   double minAllowableMaxError = 0.175;
+//   bool first = true;
+//   // Best result so far is 0.7 P with slope limiting to 8.13 and -8.13
+//     EXPECT_CALL(*mock_param_server, getParam("wheel_kP", A<double&>())).WillRepeatedly(DoAll(set_double(0.7), Return(true)));
+//     EXPECT_CALL(*mock_param_server, getParam("wheel_kI", A<double&>())).WillRepeatedly(DoAll(set_double(0.0), Return(true)));
+//     EXPECT_CALL(*mock_param_server, getParam("wheel_kD", A<double&>())).WillRepeatedly(DoAll(set_double(0.0), Return(true)));
+
+//     pcm.setParameterServer(mock_param_server);
+      
+//     // std::tuple<double,double> max_error_and_rmse = speed_test_helper.evaluateData(pcm);
+//     // double maxError = std::get<0>(max_error_and_rmse);
+//     // double rmse = std::get<1>(max_error_and_rmse);
+
+// }
 

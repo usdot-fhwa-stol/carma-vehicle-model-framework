@@ -275,11 +275,6 @@ void PassengerCarDynamicModel::DynamicCarODE(const ODESolver::State& state,
       v_xc = FLOATING_POINT_EPSILON;
     }
   }
-  // TODO these values
-  double B = 7.1;
-  double C = 1.4;
-  double D = 0.8;
-  double E = 1.01;
 
   // Compute forces
   if (non_zero_force_f) {
@@ -290,10 +285,9 @@ void PassengerCarDynamicModel::DynamicCarODE(const ODESolver::State& state,
     // Compute lateral slip angle
     const double a_f = atan((v_yc + r * l_f_) / v_xc) + d_f;
 
-    double F_zf = 0.5538 * m_ * 9.80665;
     //F_xf = C_sxf_ * sigma_f; // TODO this is the function that was replaced with the magic formula
-    double slip = -((R_ef_ * w_f) - v_xc)  / fabs(v_xc);
-    F_xf = F_zf * D * sin(C * atan(B*slip - E*(B*slip - atan(B*slip))));
+    
+    F_xf = F_zf * D * sin(C * atan(B*slip_f - E*(B*slip_f - atan(B*slip_f))));
     F_yf = -C_ayf_ * a_f;
   }
 
@@ -305,11 +299,8 @@ void PassengerCarDynamicModel::DynamicCarODE(const ODESolver::State& state,
       (rear_no_steer_no_slip_vel - v_xc) / (rear_no_steer_no_slip_vel); // When braking
     // Compute lateral slip angle
     const double a_r = atan((v_yc - r * l_r_) / v_xc);
-    double F_zr = 0.4462 * m_ * 9.80665;
 
-    double slip = -((R_er_ * w_r) - v_xc)  / fabs(v_xc);
     //F_xr = C_sxr_ * sigma_r; // TODO this is the function that was replaced with the magic formula
-    F_xr = F_zr * D * sin(C * atan(B*slip - E*(B*slip - atan(B*slip))));
     F_yr = -C_ayr_ * a_r;
   }
 

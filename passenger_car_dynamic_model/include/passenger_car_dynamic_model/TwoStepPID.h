@@ -31,14 +31,15 @@ class TwoStepPID
 {
   private:
 
-    const double kP_ = 1.0;
-    const double kI_ = 0.0;
-    const double kD_ = 0.0;
+    double kP_ = 1.0;
+    double kI_ = 0.0;
+    double kD_ = 0.0;
 
     double setpoint_ = 0.0;
     double integrator_ = 0;
     double prev_error_ = 0;
     double prev_time_ = 0;
+    double prev_output_ = 0;
     double output_max_ = std::numeric_limits<double>::max();
     double output_min_ = std::numeric_limits<double>::lowest();
 
@@ -46,6 +47,8 @@ class TwoStepPID
   public:
 
     TwoStepPID(double kP, double kI, double kD);
+
+    void setConstants(double kP, double kI, double kD);
 
     void setSetpoint(double setpoint);
 

@@ -26,6 +26,7 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <fstream>
+#include <gps_common/GPSFix.h>
 #include "lib_vehicle_model/VehicleControlInput.h"
 #include "lib_vehicle_model/VehicleState.h"
 #include "lib_vehicle_model/VehicleMotionModel.h"
@@ -53,6 +54,10 @@ namespace model_test_tools {
           if (msg != NULL)
             this->signalMessage(msg);
         }
+      }
+
+      void onMessage(const MConstPtr& m) {
+        this->signalMessage(m);
       }
   };
 
@@ -315,6 +320,140 @@ namespace model_test_tools {
         last_forcast_ = forcasts;
 
         //TODO we probably want to still compute RMSE and error for each pred return test_helper::getMaxErrorAndRMSE(forcasts,current_steers);
+      }
+    };
+
+  struct SpeedState {
+    double front_wheel_angular_vel = 0;
+    double rear_wheel_angular_vel = 0;
+    double longitudinal_vel = 0;
+    double longitudinal_accel = 0;
+  };
+
+  class SpeedTestHelper {
+    public: 
+      const bool write_to_file_ = false;
+
+      SpeedTestHelper(bool write_to_file) : write_to_file_(write_to_file) {}
+
+      ~SpeedTestHelper() {
+        sync_csv_file.close();
+      }
+
+
+      std::vector<SpeedState> current_states_, last_forcast_;
+      std::vector<double> current_cmds_;
+      std::vector<double> stamps;
+
+      std::ofstream sync_csv_file;
+
+      // Synchronized vehicle data callback
+      void syncCallback(
+        const double stamp,
+        const SpeedState speed_state,
+        const double cmd_vel
+      ) {
+        // Store data
+        current_states_.push_back(speed_state);
+        current_cmds_.push_back(cmd_vel);
+        stamps.push_back(stamp);
+      }
+
+      void logData(std::vector<SpeedState>& pred) {
+        if (!write_to_file_)
+          return;
+        
+        if (!sync_csv_file.is_open()) {
+          sync_csv_file.open("speed_sync.csv");
+          sync_csv_file << "Absolute Stamp(s), Stamp (s), Cmd Vel (m/s),"
+            << " Actual lon-vel (m/s), Actual lon-accel (m/s),"
+            << " Actual f-wheel rate (rad/s), Actual r-wheel rate (rad/s),"
+
+            << " Pred lon-vel (m/s),"
+            << " Pred f-wheel rate (rad/s), Pred r-wheel rate (rad/s)," 
+            
+            << " Pred Err lon-vel (m/s),"
+            << " Pred Err f-wheel rate (rad/s), Pred Err r-wheel rate (rad/s)" 
+            << std::endl;
+          sync_csv_file << std::setprecision(20);
+        }
+
+        for (size_t n = 0; n < stamps.size(); n++) {
+          
+          sync_csv_file << stamps[n] << "," << stamps[n] - stamps[0] << "," << current_cmds_[n] << ","
+            << current_states_[n].longitudinal_vel << "," << current_states_[n].longitudinal_accel << ", "
+            << current_states_[n].front_wheel_angular_vel << "," << current_states_[n].rear_wheel_angular_vel << ","
+            
+            << pred[n].longitudinal_vel << ","
+            << pred[n].front_wheel_angular_vel << "," << pred[n].rear_wheel_angular_vel << ","
+
+            << current_states_[n].longitudinal_vel - pred[n].longitudinal_vel << ","
+            << current_states_[n].front_wheel_angular_vel - pred[n].front_wheel_angular_vel << "," << current_states_[n].rear_wheel_angular_vel - pred[n].rear_wheel_angular_vel
+            << std::endl;
+        }
+      }
+
+      std::vector<SpeedState> predictSpeedFull(lib_vehicle_model::VehicleMotionModel& pcm, SpeedState initial_state, double target, bool applyControl, double timestep, double stepCount) const {
+        lib_vehicle_model::VehicleState vs;
+        vs.longitudinal_vel = initial_state.longitudinal_vel;
+        vs.front_wheel_rotation_rate = initial_state.front_wheel_angular_vel;
+        vs.rear_wheel_rotation_rate = initial_state.rear_wheel_angular_vel;
+
+        lib_vehicle_model::VehicleControlInput input;
+        input.target_velocity = target;
+        std::vector<lib_vehicle_model::VehicleControlInput> control_inputs(stepCount, input);
+        // NOTE: You must run this through the vehicle model in order to for integration to be done which converts our steer rate to a steer value
+        std::vector<lib_vehicle_model::VehicleState> result;
+        if (applyControl) {
+          result = pcm.predict(vs,control_inputs,timestep);
+        } else {
+          result = pcm.predict(vs,timestep,timestep * stepCount);
+        }
+        std::vector<SpeedState> results;
+        for (lib_vehicle_model::VehicleState vs : result) {
+          SpeedState ss;
+          ss.longitudinal_vel = vs.longitudinal_vel;
+          ss.front_wheel_angular_vel = vs.front_wheel_rotation_rate;
+          ss.rear_wheel_angular_vel = vs.rear_wheel_rotation_rate;
+          results.push_back(ss);
+        }
+        return results;
+      }
+
+      std::tuple<double, double> evaluateData(lib_vehicle_model::VehicleMotionModel& pcm) {
+        std::vector<SpeedState> forcasts;
+        std::vector<double> front_wheel_forcast, front_wheel_current_states;
+        forcasts.reserve(current_cmds_.size());
+        double timestep = 0.05;
+              
+        double prevSetpoint = 0; 
+        SpeedState initialSpeed;
+        bool firstLoop = true;
+        int subCount = 0;
+        for (size_t n = 0; n < current_cmds_.size(); n++) {
+          front_wheel_current_states.push_back(current_states_[n].front_wheel_angular_vel);
+          subCount++;
+          if (firstLoop) {
+            initialSpeed = current_states_[n];
+            prevSetpoint = current_cmds_[n];
+            firstLoop = false;
+          } else if (current_cmds_[n] != prevSetpoint || n == current_cmds_.size() - 1) {
+
+            std::vector<SpeedState> subForcast = predictSpeedFull(pcm, initialSpeed, prevSetpoint, true, timestep, subCount);
+
+            forcasts.insert( forcasts.end(), subForcast.begin(), subForcast.end() ); // Add prediction for this setpoint to forcasts list
+            for (SpeedState ss : subForcast) {
+              front_wheel_forcast.push_back(ss.front_wheel_angular_vel);
+            }
+            initialSpeed = current_states_[n];
+            subCount = 0;
+          }
+          prevSetpoint = current_cmds_[n];
+        }
+
+        last_forcast_ = forcasts;
+
+        return model_test_tools::getMaxErrorAndRMSE(front_wheel_forcast,front_wheel_current_states);
       }
     };
 

@@ -26,39 +26,56 @@ namespace lib_vehicle_model {
     // Private namsepace
     namespace {
 
+
+      template<class C> // TODO comment
+      class ControlWrapper {
+        public:
+          C control;
+      };
+
       // Functor for use with odeint which wraps the ode function to allow for injection of control constants into the ode function
       template<class C, class T>
       struct ODEFunctor
       {
         const ODEFunction<C,T> ode_function;
-        C control_input;
+        ControlWrapper<C>* control_input_; // TODO To make this work I need the control input to be stored in the post step functor and this to point to that TODO does this should probably be made safer
         T& tracker_;
 
         ODEFunctor(const ODEFunction<C,T>& ode_func, T& tracker) : ode_function(std::move(ode_func)), tracker_(tracker)
         {}
 
+        void setControlInputPtr(ControlWrapper<C>* control_ptr) {
+          control_input_ = control_ptr;
+        }
+
         // Callback for ode function
         void operator()(const State& current, StateDot& output, double t)
         {
-            ode_function(current, control_input, tracker_, output, t);
+          if (control_input_->control.target_velocity > 0) {
+         // std::cerr << "Control ODE Vel: " << control_input_->control.target_velocity << " " << control_input_ << std::endl;
+
+          }
+          ode_function(current, control_input_->control, tracker_, output, t);
         }
       };
+
 
       // Functor for use with odeint which calls the PostStepFunction and accumulates the resulting output data
       template<class C, class T>
       struct PostStepFunctor
       {
         const PostStepFunction<C,T> post_step_function;
-        const std::vector<C>& control_inputs;
+        std::vector<C>& control_inputs;
         State prev_final_state;
         std::vector<std::tuple<double, State>>& outputs;
         ODEFunctor<C,T>& ode_functor_obj;
+        ControlWrapper<C>& current_control_;
 
-
-        PostStepFunctor(const PostStepFunction<C, T>& post_step_func, ODEFunctor<C,T>& ode_functor, const std::vector<C>& controls, T& tracker, const State& prev_final_state, std::vector<std::tuple<double, State>>& output_vec) :  
-          post_step_function(std::move(post_step_func)), control_inputs(controls), prev_final_state(prev_final_state), outputs(output_vec), ode_functor_obj(ode_functor)
+        PostStepFunctor(const PostStepFunction<C, T>& post_step_func, ODEFunctor<C,T>& ode_functor, std::vector<C>& controls, T& tracker, const State& prev_final_state, std::vector<std::tuple<double, State>>& output_vec, ControlWrapper<C>& control_wrapper) :  
+          post_step_function(std::move(post_step_func)), control_inputs(controls), prev_final_state(prev_final_state), outputs(output_vec), ode_functor_obj(ode_functor), current_control_(control_wrapper)
         {
-          ode_functor_obj.control_input = controls[0]; // Set initial control
+          current_control_.control = controls[0]; // Set initial control input
+          ode_functor_obj.setControlInputPtr(&current_control_); // Set control address
         }
 
         // Callback for ode observer during integration
@@ -80,8 +97,9 @@ namespace lib_vehicle_model {
           outputs.push_back(std::tuple<double,State>(t, updated_state));
 
           // Update the control value for the next step
+          //std::cerr << "Time: " << t<<std::endl;
           if (control_inputs.size() > outputs.size()) {
-            ode_functor_obj.control_input = control_inputs[outputs.size()]; // Update the control input
+            current_control_.control = control_inputs[outputs.size()]; // Update the control input
           }
         }
       };
@@ -96,7 +114,7 @@ namespace lib_vehicle_model {
       double num_steps,
       double step_size,
       State& initial_state,
-      const std::vector<C>& controls,
+      std::vector<C>& controls,
       std::vector<std::tuple<double, State>>& output,
       const PostStepFunction<C,T>& post_step_func,
       T& tracker
@@ -105,10 +123,12 @@ namespace lib_vehicle_model {
       boost::numeric::odeint::runge_kutta4<State> solver; // Get RK4 solver
       
       ODEFunctor<C,T> ode(ode_func, tracker); // Build ODE functor
-
       double start_time = 0; // Set start time
 
-      PostStepFunctor<C,T> ps_func(post_step_func, ode, controls, tracker, initial_state, output); // Build post step functor
+      // Wrapper for the control variable
+      ControlWrapper<C> control_wrapper;
+      // TODO: The PSF is being copied
+      PostStepFunctor<C,T> ps_func(post_step_func, ode, controls, tracker, initial_state, output, control_wrapper); // Build post step functor
 
       // Intrgrate the function
       boost::numeric::odeint::integrate_n_steps(

@@ -83,7 +83,7 @@ namespace lib_vehicle_model {
       double num_steps,
       double step_size,
       const State& initial_state,
-      const std::vector<C>& controls,
+      std::vector<C>& controls,
       std::vector<std::tuple<double, State>>& output,
       const PostStepFunction<C,T>& post_step_func,
       T& tracker

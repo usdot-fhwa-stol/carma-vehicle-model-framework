@@ -95,8 +95,9 @@ std::vector<VehicleState> PassengerCarKinematicModel::predict(const VehicleState
   }
 
 std::vector<VehicleState> PassengerCarKinematicModel::predict(const VehicleState& initial_state,
-  const std::vector<VehicleControlInput>& control_inputs, double timestep) {
-        
+  const std::vector<VehicleControlInput>& controls, double timestep) {
+    // Copy control inputs vector to modifieable vector
+    std::vector<VehicleControlInput> control_inputs = controls;
     // Construct output vector
     std::vector<VehicleState> resulting_states;
     resulting_states.reserve(control_inputs.size());
@@ -168,6 +169,7 @@ void PassengerCarKinematicModel::KinematicCarODE(const lib_vehicle_model::ODESol
   const double d_fc = control.target_steering_angle;  // Steering angle commend
   const double V_c  = control.target_velocity;        // Velocity command
 
+  //std::cerr << "V_c: " << V_c << "d_fc: " << d_fc << std::endl;
   // State = [X, Y, Theta, V]
   const double X     = state[0];
   const double Y     = state[1];
@@ -191,11 +193,11 @@ void PassengerCarKinematicModel::KinematicCarODE(const lib_vehicle_model::ODESol
 double PassengerCarKinematicModel::predictAccel(const double V, const double V_c) const {
   double kP = speed_kP_;
   bool braking_hard = V > (V_c + 2.2); // If current speed is greater than the velocity command + 2.2 m/s
-  double max_value = 8.13;
+  double max_value = 2.0; // 1.9439;
   if (braking_hard)  {
-    std::cerr << "Hard braking" << std::endl;
+    //std::cerr << "Hard braking" << std::endl;
     kP = kP * 2.0; // Increase value of kP by 10%
-    max_value = 12.0;
+    max_value = 5.0; // -5.023
     // NOTE: It seems that the check for hard braking will disconnect when we get near the setpoint
     // This is expected based on the boolean. But the data does not mimick this behavior. 
     // I have confirmed that the integrator does NOT force the output to reach the setpoint at the end of the prediction TODO comment cleanup

@@ -217,9 +217,7 @@ namespace model_test_tools {
             // std::cerr << std::endl;
             
             auto subForcast = pcm.predict(current_states_[pred_start_idx], control_inputs_section, timestep);
-            
-             std::cerr << std::endl;
-            
+                        
             forcasts.insert( forcasts.end(), subForcast.begin(), subForcast.end() ); // Add prediction for this setpoint to forcasts list
             prev_pred_end_time = time;
             pred_start_idx = n;

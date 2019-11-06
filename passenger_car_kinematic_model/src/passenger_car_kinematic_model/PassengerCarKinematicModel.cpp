@@ -38,21 +38,44 @@ void PassengerCarKinematicModel::setParameterServer(std::shared_ptr<ParameterSer
   param_server_ = parameter_server;
   
   // Load Parameters
-  bool l_param   = param_server_->getParam("wheel_base", l_);
-  bool R_f_param = param_server_->getParam("effective_wheel_radius_f", R_ef_);
-  bool R_r_param = param_server_->getParam("effective_wheel_radius_r", R_er_);
+  bool l_f_param          = param_server_->getParam("length_to_f", l_f_);
+  bool l_r_param          = param_server_->getParam("length_to_r", l_r_);
+  bool ulR_f_param        = param_server_->getParam("unloaded_wheel_radius_f", ulR_f_);
+  bool ulR_r_param        = param_server_->getParam("unloaded_wheel_radius_r", ulR_r_);
+  bool lR_f_param         = param_server_->getParam("loaded_wheel_radius_f", lR_f_);
+  bool lR_r_param         = param_server_->getParam("loaded_wheel_radius_r", lR_r_);
+  bool speed_kP_param     = param_server_->getParam("speed_kP", speed_kP_);
+  bool accel_limit_param  = param_server_->getParam("acceleration_limit", acceleration_limit_);
+  bool decel_limit_param  = param_server_->getParam("deceleration_limit", deceleration_limit_);
+  bool hard_braking_param = param_server_->getParam("hard_braking_threshold", hard_braking_threshold_);
 
   // Check if all the required parameters could be loaded
-  if (!(l_param && R_f_param && R_r_param)) {
+  if (!(l_f_param && l_r_param && ulR_f_param 
+    && ulR_r_param && lR_f_param && lR_r_param && speed_kP_param
+    && accel_limit_param && decel_limit_param && hard_braking_param)) {
 
     std::ostringstream msg;
     msg << "One of the required parameters could not be found or read " 
-      << " wheel_base: " << l_param
-      << " effective_wheel_radius_f: " << R_f_param 
-      << " effective_wheel_radius_r: " << R_r_param;
+      << " length_to_f: " << l_f_param
+      << " length_to_r: " << l_r_param
+      << " unloaded_wheel_radius_f: " << ulR_f_param 
+      << " unloaded_wheel_radius_r: " << ulR_r_param
+      << " loaded_wheel_radius_f: " << lR_f_param
+      << " loaded_wheel_radius_r: " << lR_r_param
+      << " speed_kP: " << speed_kP_param
+      << " acceleration_limit: " << accel_limit_param
+      << " deceleration_limit: " << decel_limit_param
+      << " hard_braking_threshold: " << hard_braking_param;
 
     throw std::invalid_argument(msg.str());
   }
+
+  // Compute wheel base
+  wheel_base_ = l_f_ + l_r_;
+  
+  // Compute the effective wheel radius
+  R_ef_ = computeEffectiveWheelRadius(ulR_f_, lR_f_);
+  R_er_ = computeEffectiveWheelRadius(ulR_r_, lR_r_);
 }
 
 std::vector<VehicleState> PassengerCarKinematicModel::predict(const VehicleState& initial_state,
@@ -79,8 +102,9 @@ std::vector<VehicleState> PassengerCarKinematicModel::predict(const VehicleState
   }
 
 std::vector<VehicleState> PassengerCarKinematicModel::predict(const VehicleState& initial_state,
-  const std::vector<VehicleControlInput>& control_inputs, double timestep) {
-        
+  const std::vector<VehicleControlInput>& controls, double timestep) {
+    // Copy control inputs vector to modifieable vector
+    std::vector<VehicleControlInput> control_inputs = controls;
     // Construct output vector
     std::vector<VehicleState> resulting_states;
     resulting_states.reserve(control_inputs.size());
@@ -94,11 +118,12 @@ std::vector<VehicleState> PassengerCarKinematicModel::predict(const VehicleState
     state[0]  = initial_state.X_pos_global;
     state[1]  = initial_state.Y_pos_global;
     state[2]  = initial_state.orientation;
+    state[3]  = initial_state.longitudinal_vel;
 
     double prev_time = 0.0;
 
     // STATE
-    // x,y, theta
+    // x,y, theta, v
 
     // Integrate ODE
     ODESolver::rk4<VehicleControlInput, double>(
@@ -148,22 +173,40 @@ void PassengerCarKinematicModel::KinematicCarODE(const lib_vehicle_model::ODESol
   ) const
 {
   // Extract control values
-  const double d_fc = control.target_steering_angle; // Steering angle commend
-  const double V_c = control.target_velocity; // Velocity command
+  const double d_fc = control.target_steering_angle;  // Steering angle commend
+  const double V_c  = control.target_velocity;        // Velocity command
 
-  // State = [X, Y, Theta]
-  const  double X     = state[0];
-  const  double Y     = state[1];
-  const  double Theta = state[2];
+  // State = [X, Y, Theta, V]
+  const double X     = state[0];
+  const double Y     = state[1];
+  const double Theta = state[2];
+  const double V     = state[3];
 
   // Ensure state_dot is the same size as state.  Zero out all values.
   state_dot.resize(state.size(), 0);
+
+  // Compute total vehicle slip
+  const double beta = atan(tan(d_fc) * l_r_ / wheel_base_);
   
   // Compute state_dot
-  state_dot[0] = V_c * cos(Theta);        // X-dot
-  state_dot[1] = V_c * sin(Theta);        // Y-dot
-  state_dot[2] = (V_c / l_) * tan(d_fc);  // Theta-dot
+  state_dot[0] = V * cos(Theta + beta);   // X-dot
+  state_dot[1] = V * sin(Theta + beta);   // Y-dot
+  state_dot[2] = (V / l_r_) * sin(beta);  // Theta-dot
+  state_dot[3] = predictAccel(V, V_c);    // V
 
+}
+
+double PassengerCarKinematicModel::predictAccel(const double V, const double V_c) const {
+  double kP = speed_kP_;
+  bool braking_hard = V > (V_c + hard_braking_threshold_); // If current speed is greater than the velocity command + hard braking threshold
+  
+  if (braking_hard)  { // Check hard braking edge case
+    kP = kP * 2.0; // Increase value of kP by 100%
+    // NOTE: Experiments show that the PACMOD will break hard for step changes in the speed command
+  }
+
+  double P = kP * (V_c - V);
+  return std::min(std::max(P, -deceleration_limit_), acceleration_limit_);
 }
 
 void PassengerCarKinematicModel::ODEPostStep(const lib_vehicle_model::ODESolver::State& current,
@@ -180,8 +223,7 @@ void PassengerCarKinematicModel::ODEPostStep(const lib_vehicle_model::ODESolver:
 
   // Copy over unstimulated values
   double dt = t - prev_time;
-  output[3]  = control.target_velocity; // This model assumes command velocity change is instantaneous
-  output[4]  = 0; // This model assumes no lateral velocity
+  output[4]  = 0; // This model does not track lateral velocity
   output[5]  = dt == 0.0 ? 0.0 : (current[2] - prev_state[2]) / dt; // Yaw rate equals dTheta/dt
   output[6]  = output[3] / R_ef_; // Assume no slip. Velocity / radius = rotation rate
   output[7]  = output[3] / R_er_; // Assume no slip. 
@@ -192,5 +234,12 @@ void PassengerCarKinematicModel::ODEPostStep(const lib_vehicle_model::ODESolver:
 
   // Update tracker
   prev_time = t;
+}
+
+/**
+ * Math based on figure 3.35 in R. N. Jazar, "Vehicle dynamics: theory and application" Springer, 2008.
+ */ 
+inline double PassengerCarKinematicModel::computeEffectiveWheelRadius(const double unloaded_radius, const double loaded_radius) const {
+  return unloaded_radius - ((unloaded_radius - loaded_radius) / 3.0);
 }
 

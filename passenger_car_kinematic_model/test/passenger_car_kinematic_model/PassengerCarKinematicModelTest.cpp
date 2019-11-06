@@ -36,6 +36,8 @@
 #include "lib_vehicle_model/ODESolver.h"
 #include "passenger_car_kinematic_model/PassengerCarKinematicModel.h"
 #include <model_test_tools/TestHelper.h>
+#include <gps_common/GPSFix.h>
+#include "sigpack.h"
 
 
 /**
@@ -74,17 +76,36 @@ ACTION_P(set_string, val)
   arg1 = val;
 }
 
-void initializeParamServer (
-  std::shared_ptr<MockParamServer> mock_param_server,
-  double wheel_base,
-  double effective_wheel_radius_f,
-  double effective_wheel_radius_r
-) {
+class ParameterInitializer {
+  public:
+    // Default values from STOL Lexus
+    double length_to_f_ = 1.24;
+    double length_to_r_ = 1.538;
+    double unloaded_wheel_radius_f_ = 0.355;
+    double unloaded_wheel_radius_r_ = 0.3625;
+    double loaded_wheel_radius_f_ = 0.355;
+    double loaded_wheel_radius_r_ = 0.3625;
+    double speed_kP_ = 0.8;
+    double acceleration_limit_ = 3.0;
+    double deceleration_limit_ = 6.0;
+    double hard_braking_threshold_ = 2.2;
 
-    EXPECT_CALL(*mock_param_server, getParam("wheel_base", A<double&>())).WillRepeatedly(DoAll(set_double(wheel_base), Return(true)));
-    EXPECT_CALL(*mock_param_server, getParam("effective_wheel_radius_f", A<double&>())).WillRepeatedly(DoAll(set_double(effective_wheel_radius_f), Return(true)));
-    EXPECT_CALL(*mock_param_server, getParam("effective_wheel_radius_r", A<double&>())).WillRepeatedly(DoAll(set_double(effective_wheel_radius_r), Return(true)));
-}
+  void initializeParamServer (
+    std::shared_ptr<MockParamServer> mock_param_server
+  ) {
+    EXPECT_CALL(*mock_param_server, getParam("length_to_f", A<double&>())).WillRepeatedly(DoAll(set_double(length_to_f_), Return(true)));
+    EXPECT_CALL(*mock_param_server, getParam("length_to_r", A<double&>())).WillRepeatedly(DoAll(set_double(length_to_r_), Return(true)));
+    EXPECT_CALL(*mock_param_server, getParam("unloaded_wheel_radius_f", A<double&>())).WillRepeatedly(DoAll(set_double(unloaded_wheel_radius_f_), Return(true)));
+    EXPECT_CALL(*mock_param_server, getParam("unloaded_wheel_radius_r", A<double&>())).WillRepeatedly(DoAll(set_double(unloaded_wheel_radius_r_), Return(true)));
+    EXPECT_CALL(*mock_param_server, getParam("loaded_wheel_radius_f", A<double&>())).WillRepeatedly(DoAll(set_double(loaded_wheel_radius_f_), Return(true)));
+    EXPECT_CALL(*mock_param_server, getParam("loaded_wheel_radius_r", A<double&>())).WillRepeatedly(DoAll(set_double(loaded_wheel_radius_r_), Return(true)));
+    EXPECT_CALL(*mock_param_server, getParam("speed_kP", A<double&>())).WillRepeatedly(DoAll(set_double(speed_kP_), Return(true)));
+    EXPECT_CALL(*mock_param_server, getParam("acceleration_limit", A<double&>())).WillRepeatedly(DoAll(set_double(acceleration_limit_), Return(true)));
+    EXPECT_CALL(*mock_param_server, getParam("deceleration_limit", A<double&>())).WillRepeatedly(DoAll(set_double(deceleration_limit_), Return(true)));
+    EXPECT_CALL(*mock_param_server, getParam("hard_braking_threshold", A<double&>())).WillRepeatedly(DoAll(set_double(hard_braking_threshold_), Return(true)));
+  }
+};
+
 
 
 /**
@@ -92,14 +113,14 @@ void initializeParamServer (
  */ 
 TEST(PassengerCarKinematicModel, setParameterServer)
 {
-
   // Setup param server
   auto mock_param_server = std::make_shared<MockParamServer>();
 
   // Params for this vehicle model but with mass set to false
-  initializeParamServer(mock_param_server, 10.0, 180.0, 180.0);
+  ParameterInitializer paramIniter;
+  paramIniter.initializeParamServer(mock_param_server);
   // Make one param return false
-  EXPECT_CALL(*mock_param_server, getParam("effective_wheel_radius_r", A<double&>())).WillRepeatedly(DoAll(set_double(-180.0), Return(false)));
+  EXPECT_CALL(*mock_param_server, getParam("speed_kP", A<double&>())).WillRepeatedly(DoAll(set_double(-180.0), Return(false)));
   
   // Try building without all params
   PassengerCarKinematicModel pcm;
@@ -107,7 +128,7 @@ TEST(PassengerCarKinematicModel, setParameterServer)
   ASSERT_THROW(pcm.setParameterServer(mock_param_server), std::invalid_argument);
 
   // Add mass to params
-  EXPECT_CALL(*mock_param_server, getParam("effective_wheel_radius_r", A<double&>())).WillRepeatedly(DoAll(set_double(-180.0), Return(true)));
+  EXPECT_CALL(*mock_param_server, getParam("speed_kP", A<double&>())).WillRepeatedly(DoAll(set_double(-180.0), Return(true)));
 
   // Try loading valid set of parameters
   ASSERT_NO_THROW(pcm.setParameterServer(mock_param_server));
@@ -122,10 +143,18 @@ TEST(lib_vehicle_model, predict_no_control)
     // Setup param server
   auto mock_param_server = std::make_shared<MockParamServer>();
 
-  // Params for this vehicle model but with mass set to false
+  // Params for this vehicle model
   const double wheel_radius = 0.3048; //m
-  const double wheel_base = 2.4384 * 2.0;
-  initializeParamServer(mock_param_server, wheel_base, wheel_radius, wheel_radius);
+  // Params for this vehicle model
+  ParameterInitializer paramIniter;
+  paramIniter.length_to_f_             = 2.4384;
+  paramIniter.length_to_r_             = 2.4384;
+  paramIniter.unloaded_wheel_radius_f_ = wheel_radius;
+  paramIniter.unloaded_wheel_radius_r_ = wheel_radius;
+  paramIniter.loaded_wheel_radius_f_   = wheel_radius;
+  paramIniter.loaded_wheel_radius_r_   = wheel_radius;
+  paramIniter.initializeParamServer(mock_param_server);
+
   
   // Try building without all params
   PassengerCarKinematicModel pcm;
@@ -243,8 +272,9 @@ TEST(lib_vehicle_model, predict_no_control)
 
 class VehicleStateFunctor {
   model_test_tools::ModelTestHelper& helper_;
+  double base_link_to_CG_dist_ = 0;
   public:
-    VehicleStateFunctor(model_test_tools::ModelTestHelper& helper) : helper_(helper)
+    VehicleStateFunctor(model_test_tools::ModelTestHelper& helper, double base_link_to_CG_dist) : helper_(helper), base_link_to_CG_dist_(base_link_to_CG_dist)
     {}
 
     // Callback for ode observer during integration
@@ -258,12 +288,16 @@ class VehicleStateFunctor {
       const double radPerSteeringRad = 0.05922;
       double stamp = pose_msg->header.stamp.toSec();
       lib_vehicle_model::VehicleState vs;
-      vs.X_pos_global = pose_msg->pose.position.x;
-      vs.Y_pos_global = pose_msg->pose.position.y;
       double roll, pitch, yaw;
       model_test_tools::getRPYFromPose(pose_msg->pose, roll, pitch, yaw);
 
       vs.orientation = yaw;
+
+      // Pose is provided in the base_link frame but the position of the CG is needed for this model
+      // Add the components of the offset from base_link to cg to the model
+      vs.X_pos_global = pose_msg->pose.position.x + (base_link_to_CG_dist_ * cos(yaw));
+      vs.Y_pos_global = pose_msg->pose.position.y + (base_link_to_CG_dist_ * sin(yaw));
+
       vs.longitudinal_vel = twist_msg->twist.linear.x;
       vs.lateral_vel = 0;
 
@@ -292,17 +326,8 @@ TEST(PassengerCarKinematicModel, evaluate_overall_pred)
   auto mock_param_server = std::make_shared<MockParamServer>();
 
   // Params for this vehicle model
-  // NOTE: The values here are from the measurements of the STOL Blue Lexus in Sep. 2019
-  const double wheel_base = 1.24 + 1.538;
-  const double effective_wheel_radius_f = 0.355;
-  const double effective_wheel_radius_r = 0.3625;
-
-  initializeParamServer(
-    mock_param_server,
-    wheel_base,
-    effective_wheel_radius_f,
-    effective_wheel_radius_r
-  );
+  ParameterInitializer paramIniter;
+  paramIniter.initializeParamServer(mock_param_server);
 
   // Try building with all params
   PassengerCarKinematicModel pcm;
@@ -311,7 +336,7 @@ TEST(PassengerCarKinematicModel, evaluate_overall_pred)
   //// 
   // Open Data File
   ////
-  model_test_tools::ModelTestHelper model_test_helper(true, 0.1, 6.0);
+  model_test_tools::ModelTestHelper model_test_helper(false, 0.1, 6.0);
 
   rosbag::Bag bag;
   bag.open("data/_2019-10-03-17-11-49_full_loop_validation_filtered.bag", rosbag::bagmode::Read);
@@ -348,7 +373,7 @@ TEST(PassengerCarKinematicModel, evaluate_overall_pred)
   // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
   message_filters::Synchronizer<ApproxTimePolicy> sync(ApproxTimePolicy(100), pose_sub, imu_sub, wheel_sub, twist_sub, cmd_sub, steer_sub);
 
-  VehicleStateFunctor cb_functor(model_test_helper);
+  VehicleStateFunctor cb_functor(model_test_helper, paramIniter.length_to_r_);
   sync.registerCallback(boost::bind<void>(cb_functor, _1, _2, _3, _4, _5, _6));
 
   // Playback bag file to collect data
@@ -364,14 +389,190 @@ TEST(PassengerCarKinematicModel, evaluate_overall_pred)
 
   bag.close();
 
-  //std::tuple<double,double> max_error_and_rmse = steer_test_helper.evaluateSteeringData(pcm);
   model_test_helper.evaluateData(pcm);
-  // double maxError = std::get<0>(max_error_and_rmse);
-  // double rmse = std::get<1>(max_error_and_rmse);
-
-  // ASSERT_LE(rmse, 0.03) << " RMSE larger then allowed " << "PID - P: " << steering_kP << " I: " << steering_kI << " D: " << steering_kD;
-  // ASSERT_LE(maxError, 0.12015) << " MaxError larger then allowed " << "PID - P: " << steering_kP << " I: " << steering_kI << " D: " << steering_kD;
   
   model_test_helper.logData(model_test_helper.last_forcast_);
   model_test_helper.sync_csv_file.close();
+}
+
+
+class SpeedStateFunctor {
+  model_test_tools::SpeedTestHelper& helper_;
+  public:
+    SpeedStateFunctor(model_test_tools::SpeedTestHelper& helper) : helper_(helper)
+    {}
+
+    // Callback for ode observer during integration
+    void operator()(
+    const sensor_msgs::ImuConstPtr imu_msg, // Used for acceleration
+    const pacmod_msgs::WheelSpeedRptConstPtr wheel_msg, // Used for wheel speed
+    const autoware_msgs::VehicleCmdConstPtr cmd_msg, // Used for command speed
+    const gps_common::GPSFixConstPtr fix_msg // Used for ground speed
+  ) {
+
+    double stamp = fix_msg->header.stamp.toSec(); // Get Stamp
+
+    double cmd_vel = cmd_msg->ctrl_cmd.linear_velocity; // Get cmd_vel
+
+    model_test_tools::SpeedState ss; // Get speed state
+    ss.longitudinal_accel = imu_msg->linear_acceleration.y; // NOTE: this changes to x or y depending on car
+    ss.front_wheel_angular_vel = (wheel_msg->front_left_wheel_speed + wheel_msg->front_right_wheel_speed) / 2.0;
+    ss.rear_wheel_angular_vel = (wheel_msg->rear_left_wheel_speed + wheel_msg->rear_right_wheel_speed) / 2.0;
+    ss.longitudinal_vel = fix_msg->speed; // NOTE: This assumes forward driving
+
+    // Store data
+    helper_.syncCallback(stamp, ss, cmd_vel);
+  }
+};
+
+
+/**
+ * This Unit test is for finding initial P values based on bag files.
+ * The determined values should not be taken as guaranteed optimal
+ * Instead they provide a reasonable starting point for tunning. 
+ * 
+ * NOTE: This test is currently disabled. To enable it remove the DISABLED_ prefix from the test name
+ */ 
+TEST(PassengerCarKinematicModel, DISABLED_find_speed_pid)
+{
+
+  // Create test helper. 
+  // NOTE: Set to true to record data to csv file
+  model_test_tools::SpeedTestHelper speed_test_helper(true); 
+
+  // Setup param server
+  auto mock_param_server = std::make_shared<MockParamServer>();
+
+    // Params for this vehicle model
+  ParameterInitializer paramIniter;
+  paramIniter.acceleration_limit_ = 2.0;
+  paramIniter.deceleration_limit_ = 5.0;
+  paramIniter.initializeParamServer(mock_param_server);
+  // Try building with all params
+  PassengerCarKinematicModel pcm;
+  ASSERT_NO_THROW(pcm.setParameterServer(mock_param_server));
+
+  rosbag::Bag bag;
+  bag.open("data/_2019-10-30-11-57-22_5mps_6s_filtered.bag", rosbag::bagmode::Read);
+
+  ros::Time startTime(1572454657.9144); // For 5mps 1572454657.9144, for 10mps 1572454805.37492, for 5mps brake 1572454661.71489
+  ros::Time endTime(1572454661.71489); // For 5mps ramp 1572454661.71489, for 10mps ramp 1572454813.07975
+
+
+  std::string imu_tpc         = "/imu_raw";
+  std::string wheel_rpt_tpc   = "/pacmod/parsed_tx/wheel_speed_rpt";
+  std::string vehicle_cmd_tpc = "/vehicle_cmd";
+  std::string gps_tpc         = "/gnss_fix_fused";
+
+  std::vector<std::string> topics;
+  topics.push_back(imu_tpc); 
+  topics.push_back(wheel_rpt_tpc);
+  topics.push_back(vehicle_cmd_tpc);
+  topics.push_back(gps_tpc);
+
+  //rosbag::View view(bag, rosbag::TopicQuery(topics), startTime);
+  rosbag::View view(bag, rosbag::TopicQuery(topics), startTime, endTime);
+  //rosbag::View view(bag, rosbag::TopicQuery(topics));
+
+  model_test_tools::BagSubscriber<sensor_msgs::Imu> imu_sub(imu_tpc);
+  model_test_tools::BagSubscriber<pacmod_msgs::WheelSpeedRpt> wheel_sub(wheel_rpt_tpc);
+  model_test_tools::BagSubscriber<autoware_msgs::VehicleCmd> cmd_sub(vehicle_cmd_tpc);
+  model_test_tools::BagSubscriber<gps_common::GPSFix> gps_sub(gps_tpc);
+
+  typedef message_filters::sync_policies::ApproximateTime<
+    sensor_msgs::Imu, pacmod_msgs::WheelSpeedRpt,
+    autoware_msgs::VehicleCmd, gps_common::GPSFix
+    > ApproxTimePolicy;
+
+  // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
+  message_filters::Synchronizer<ApproxTimePolicy> sync(ApproxTimePolicy(100), imu_sub, wheel_sub, cmd_sub, gps_sub);
+  SpeedStateFunctor functor(speed_test_helper);
+  sync.registerCallback(boost::bind<void>(functor, _1, _2, _3, _4));
+
+  //
+  // Create Low Pass IIR filter for IMU acceleration data. Based on butterworth filter in matlab
+  // Order: 2nd
+  // Passband Freq: 21 Hz
+  sp::IIR_filt<double,double,double> imu_filter;
+  arma::vec3 b;
+  b[0] = 0.222955;
+  b[1] = 0.445910;
+  b[2] = 0.222955;
+
+  arma::vec3 a;
+  a[0] = 1.000000;
+  a[1] = -0.295200;
+  a[2] = 0.187020;
+
+  imu_filter.set_coeffs(b, a);
+
+  // Playback bag file to collect data
+  for(const rosbag::MessageInstance m : view)
+  {
+    // Filter IMU data. This should be done before going into model_test_tools so that the time_synchronizer does not impact the filter
+    sensor_msgs::ImuConstPtr s = m.instantiate<sensor_msgs::Imu>();
+    sensor_msgs::Imu newMsg;
+    if (s != NULL) { 
+        newMsg.header = s->header;
+        newMsg.angular_velocity = s->angular_velocity;
+        newMsg.angular_velocity_covariance = s->angular_velocity_covariance;
+        newMsg.orientation = s->orientation;
+        newMsg.orientation_covariance = s->orientation_covariance;
+        newMsg.linear_acceleration = s->linear_acceleration;
+        newMsg.linear_acceleration_covariance = s->linear_acceleration_covariance;
+        newMsg.linear_acceleration.x = imu_filter(s->linear_acceleration.x);
+    }
+
+    sensor_msgs::ImuConstPtr imu_ptr(new sensor_msgs::Imu(newMsg));
+
+    imu_sub.onMessage(imu_ptr);
+    wheel_sub.onMessageInstance(m);
+    cmd_sub.onMessageInstance(m);
+    gps_sub.onMessageInstance(m);
+  }
+
+  bag.close();
+
+  std::vector<model_test_tools::SpeedState> bestForcast;
+  double minRMSE = 0;
+  double bestP = 0;
+  double bestI = 0;
+  double bestD = 0;
+  double minMaxError = 0;
+  bool first = true;
+  for (double p = 0.0; p < 1.5; p += 0.05) { // P
+    if (-0.0000001 < p && p <0.0000001) { // Skip 0
+       continue;
+    } // Best result so far is 0.8 P
+    EXPECT_CALL(*mock_param_server, getParam("speed_kP", A<double&>())).WillRepeatedly(DoAll(set_double(p), Return(true)));
+
+    pcm.setParameterServer(mock_param_server);
+    
+    std::tuple<double,double> max_error_and_rmse = speed_test_helper.evaluateData(pcm);
+    double maxError = std::get<0>(max_error_and_rmse);
+    double rmse = std::get<1>(max_error_and_rmse);
+
+    if (first) {
+      first = false;
+      minRMSE = rmse;
+      bestP = p;
+      bestForcast = speed_test_helper.last_forcast_;
+      minMaxError = maxError;
+    } else if (rmse < minRMSE) {
+      minRMSE = rmse;
+      bestP = p;
+      bestForcast = speed_test_helper.last_forcast_;
+      minMaxError = maxError;
+    }
+    std::cerr << "Current P " << p << std::endl;
+    std::cerr << "CurBest P: " <<  bestP << std::endl;
+    std::cerr << "CurBest RMSE: " << minRMSE << std::endl;
+    std::cerr << "CurBest MaxError: " << minMaxError << std::endl;
+    //break;
+  }
+  speed_test_helper.logData(bestForcast);
+  speed_test_helper.sync_csv_file.close();
+  std::cerr << std::endl << "Best P: " <<  bestP << std::endl;
+  std::cerr << "Best RMSE: " << minRMSE << std::endl;
+  std::cerr << "Best MaxError: " << minMaxError << std::endl;
 }

@@ -27,7 +27,9 @@ namespace lib_vehicle_model {
     namespace {
 
 
-      template<class C> // TODO comment
+      // Helper class which wraps the current control variable. 
+      // This is used to allow the underlying control variable to be changed during the integration process
+      template<class C> 
       class ControlWrapper {
         public:
           C control;
@@ -38,7 +40,7 @@ namespace lib_vehicle_model {
       struct ODEFunctor
       {
         const ODEFunction<C,T> ode_function;
-        ControlWrapper<C>* control_input_; // TODO To make this work I need the control input to be stored in the post step functor and this to point to that TODO does this should probably be made safer
+        ControlWrapper<C>* control_input_;
         T& tracker_;
 
         ODEFunctor(const ODEFunction<C,T>& ode_func, T& tracker) : ode_function(std::move(ode_func)), tracker_(tracker)
@@ -51,10 +53,6 @@ namespace lib_vehicle_model {
         // Callback for ode function
         void operator()(const State& current, StateDot& output, double t)
         {
-          if (control_input_->control.target_velocity > 0) {
-         // std::cerr << "Control ODE Vel: " << control_input_->control.target_velocity << " " << control_input_ << std::endl;
-
-          }
           ode_function(current, control_input_->control, tracker_, output, t);
         }
       };
@@ -82,7 +80,6 @@ namespace lib_vehicle_model {
         void operator()(const State& current, double t)
         {
           // If this is the initial odeint callback for our starting condition we don't need to record it
-          // TODO commented old code
           if (t == 0) {
             return;
           }
@@ -92,12 +89,11 @@ namespace lib_vehicle_model {
 
           post_step_function(current, control_inputs[outputs.size()], ode_functor_obj.tracker_, t, prev_final_state, updated_state);
           prev_final_state = updated_state;
-          //std::cerr << "Actual Next Prev " << prev_final_state[10] << std::endl;
+
           // Set the final output
           outputs.push_back(std::tuple<double,State>(t, updated_state));
 
           // Update the control value for the next step
-          //std::cerr << "Time: " << t<<std::endl;
           if (control_inputs.size() > outputs.size()) {
             current_control_.control = control_inputs[outputs.size()]; // Update the control input
           }
@@ -127,7 +123,7 @@ namespace lib_vehicle_model {
 
       // Wrapper for the control variable
       ControlWrapper<C> control_wrapper;
-      // TODO: The PSF is being copied
+
       PostStepFunctor<C,T> ps_func(post_step_func, ode, controls, tracker, initial_state, output, control_wrapper); // Build post step functor
 
       // Intrgrate the function

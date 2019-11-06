@@ -73,7 +73,7 @@ namespace lib_vehicle_model {
      * @param step_size The step size between independent variable samples of the ODE. 
      * @param initial_state The vector of values which define the initial state. The initial condition is defined as (0, initial_state).
      * @param controls A list of controls which will be applied as a constant during each integration step. If the list is shorter than the integration size the last element will be used for the remainder of the integration
-     * @param tracker An o TODO
+     * @param tracker An object that will be preserved during integration steps and can be used to track integration variables such as elapsed time. If not needed, point at a variable whose scope is at least as long as this call
      * @param output A list of output states seperated by step_size with an added length equal to num_steps. Elements of the list are tuples of (independant variable, state)
      * @param post_step_fun A function which will be called after each integration step. This function can be used to set state variables which are not being considered during integration
      */

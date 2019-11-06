@@ -86,7 +86,9 @@ class ParameterInitializer {
     double loaded_wheel_radius_f_ = 0.355;
     double loaded_wheel_radius_r_ = 0.3625;
     double speed_kP_ = 0.8;
-
+    double acceleration_limit_ = 3.0;
+    double deceleration_limit_ = 6.0;
+    double hard_braking_threshold_ = 2.2;
 
   void initializeParamServer (
     std::shared_ptr<MockParamServer> mock_param_server
@@ -98,6 +100,9 @@ class ParameterInitializer {
     EXPECT_CALL(*mock_param_server, getParam("loaded_wheel_radius_f", A<double&>())).WillRepeatedly(DoAll(set_double(loaded_wheel_radius_f_), Return(true)));
     EXPECT_CALL(*mock_param_server, getParam("loaded_wheel_radius_r", A<double&>())).WillRepeatedly(DoAll(set_double(loaded_wheel_radius_r_), Return(true)));
     EXPECT_CALL(*mock_param_server, getParam("speed_kP", A<double&>())).WillRepeatedly(DoAll(set_double(speed_kP_), Return(true)));
+    EXPECT_CALL(*mock_param_server, getParam("acceleration_limit", A<double&>())).WillRepeatedly(DoAll(set_double(acceleration_limit_), Return(true)));
+    EXPECT_CALL(*mock_param_server, getParam("deceleration_limit", A<double&>())).WillRepeatedly(DoAll(set_double(deceleration_limit_), Return(true)));
+    EXPECT_CALL(*mock_param_server, getParam("hard_braking_threshold", A<double&>())).WillRepeatedly(DoAll(set_double(hard_braking_threshold_), Return(true)));
   }
 };
 
@@ -106,7 +111,7 @@ class ParameterInitializer {
 /**
  * Tests the setParameterServer function of the PassengerCarKinematicModel class
  */ 
-TEST(PassengerCarKinematicModel, DISABLED_setParameterServer)
+TEST(PassengerCarKinematicModel, setParameterServer)
 {
   // Setup param server
   auto mock_param_server = std::make_shared<MockParamServer>();
@@ -133,7 +138,7 @@ TEST(PassengerCarKinematicModel, DISABLED_setParameterServer)
 /**
  * Tests the predict (no control input) function of the PassengerCarKinematicModel 
  */ 
-TEST(lib_vehicle_model, DISABLED_predict_no_control)
+TEST(lib_vehicle_model, predict_no_control)
 {
     // Setup param server
   auto mock_param_server = std::make_shared<MockParamServer>();
@@ -265,7 +270,6 @@ TEST(lib_vehicle_model, DISABLED_predict_no_control)
   }
 }
 
-// TODO there might be some value in using the gps velocity instead of Pacmod for reporting the velocity vector accurately
 class VehicleStateFunctor {
   model_test_tools::ModelTestHelper& helper_;
   public:
@@ -327,7 +331,7 @@ TEST(PassengerCarKinematicModel, evaluate_overall_pred)
   //// 
   // Open Data File
   ////
-  model_test_tools::ModelTestHelper model_test_helper(true, 0.1, 4.0);
+  model_test_tools::ModelTestHelper model_test_helper(true, 0.1, 2.0);
 
   rosbag::Bag bag;
   bag.open("data/_2019-10-03-17-11-49_full_loop_validation_filtered.bag", rosbag::bagmode::Read);
@@ -380,13 +384,7 @@ TEST(PassengerCarKinematicModel, evaluate_overall_pred)
 
   bag.close();
 
-  //std::tuple<double,double> max_error_and_rmse = steer_test_helper.evaluateSteeringData(pcm);
   model_test_helper.evaluateData(pcm);
-  // double maxError = std::get<0>(max_error_and_rmse);
-  // double rmse = std::get<1>(max_error_and_rmse);
-
-  // ASSERT_LE(rmse, 0.03) << " RMSE larger then allowed " << "PID - P: " << steering_kP << " I: " << steering_kI << " D: " << steering_kD;
-  // ASSERT_LE(maxError, 0.12015) << " MaxError larger then allowed " << "PID - P: " << steering_kP << " I: " << steering_kI << " D: " << steering_kD;
   
   model_test_helper.logData(model_test_helper.last_forcast_);
   model_test_helper.sync_csv_file.close();
@@ -412,7 +410,7 @@ class SpeedStateFunctor {
     double cmd_vel = cmd_msg->ctrl_cmd.linear_velocity; // Get cmd_vel
 
     model_test_tools::SpeedState ss; // Get speed state
-    ss.longitudinal_accel = imu_msg->linear_acceleration.y; // TODO this changes to x or y depending on car
+    ss.longitudinal_accel = imu_msg->linear_acceleration.y; // NOTE: this changes to x or y depending on car
     ss.front_wheel_angular_vel = (wheel_msg->front_left_wheel_speed + wheel_msg->front_right_wheel_speed) / 2.0;
     ss.rear_wheel_angular_vel = (wheel_msg->rear_left_wheel_speed + wheel_msg->rear_right_wheel_speed) / 2.0;
     ss.longitudinal_vel = fix_msg->speed; // NOTE: This assumes forward driving
@@ -424,7 +422,7 @@ class SpeedStateFunctor {
 
 
 /**
- * This Unit test is for finding initial PID values based on bag files.
+ * This Unit test is for finding initial P values based on bag files.
  * The determined values should not be taken as guaranteed optimal
  * Instead they provide a reasonable starting point for tunning. 
  * 
@@ -442,13 +440,15 @@ TEST(PassengerCarKinematicModel, DISABLED_find_speed_pid)
 
     // Params for this vehicle model
   ParameterInitializer paramIniter;
+  paramIniter.acceleration_limit_ = 2.0;
+  paramIniter.deceleration_limit_ = 5.0;
   paramIniter.initializeParamServer(mock_param_server);
   // Try building with all params
   PassengerCarKinematicModel pcm;
   ASSERT_NO_THROW(pcm.setParameterServer(mock_param_server));
 
   rosbag::Bag bag;
-  bag.open("data/_2019-10-30-11-57-22_5mps_6s.bag", rosbag::bagmode::Read);
+  bag.open("data/_2019-10-30-11-57-22_5mps_6s_filtered.bag", rosbag::bagmode::Read);
 
   ros::Time startTime(1572454661.71489); // For 5mps 1572454657.9144, for 10mps 1572454805.37492, for 5mps brake 1572454661.71489
   ros::Time endTime(1572454661.71489); // For 5mps ramp 1572454661.71489, for 10mps ramp 1572454813.07975
@@ -484,7 +484,6 @@ TEST(PassengerCarKinematicModel, DISABLED_find_speed_pid)
   SpeedStateFunctor functor(speed_test_helper);
   sync.registerCallback(boost::bind<void>(functor, _1, _2, _3, _4));
 
-
   //
   // Create Low Pass IIR filter for IMU acceleration data. Based on butterworth filter in matlab
   // Order: 2nd
@@ -508,7 +507,7 @@ TEST(PassengerCarKinematicModel, DISABLED_find_speed_pid)
     // Filter IMU data. This should be done before going into model_test_tools so that the time_synchronizer does not impact the filter
     sensor_msgs::ImuConstPtr s = m.instantiate<sensor_msgs::Imu>();
     sensor_msgs::Imu newMsg;
-    if (s != NULL) { //(TODO this requires filtering )
+    if (s != NULL) { 
         newMsg.header = s->header;
         newMsg.angular_velocity = s->angular_velocity;
         newMsg.angular_velocity_covariance = s->angular_velocity_covariance;
@@ -535,55 +534,40 @@ TEST(PassengerCarKinematicModel, DISABLED_find_speed_pid)
   double bestI = 0;
   double bestD = 0;
   double minMaxError = 0;
-  double minAllowableMaxError = 0.175;
   bool first = true;
   for (double p = 0.0; p < 1.5; p += 0.05) { // P
     if (-0.0000001 < p && p <0.0000001) { // Skip 0
        continue;
-    } // Best result so far is 0.7 P with slope limiting to 8.13 and -8.13
-    EXPECT_CALL(*mock_param_server, getParam("speed_kP", A<double&>())).WillRepeatedly(DoAll(set_double(0.8), Return(true)));
+    } // Best result so far is 0.8 P
+    EXPECT_CALL(*mock_param_server, getParam("speed_kP", A<double&>())).WillRepeatedly(DoAll(set_double(p), Return(true)));
 
-    for (double i = -1; i < 1; i += 0.1) { // I
-      //EXPECT_CALL(*mock_param_server, getParam("wheel_kI", A<double&>())).WillRepeatedly(DoAll(set_double(0.0), Return(true)));
+    pcm.setParameterServer(mock_param_server);
+    
+    std::tuple<double,double> max_error_and_rmse = speed_test_helper.evaluateData(pcm);
+    double maxError = std::get<0>(max_error_and_rmse);
+    double rmse = std::get<1>(max_error_and_rmse);
 
-      for (double d = 0.0; d < 3.0; d += 0.1) { // D 
-        //EXPECT_CALL(*mock_param_server, getParam("wheel_kD", A<double&>())).WillRepeatedly(DoAll(set_double(0.0), Return(true)));
-
-        pcm.setParameterServer(mock_param_server);
-        
-        std::tuple<double,double> max_error_and_rmse = speed_test_helper.evaluateData(pcm);
-        double maxError = std::get<0>(max_error_and_rmse);
-        double rmse = std::get<1>(max_error_and_rmse);
-
-        if (first) {
-          first = false;
-          minRMSE = rmse;
-          bestP = p;
-          bestI = i;
-          bestD = d;
-          bestForcast = speed_test_helper.last_forcast_;
-          minMaxError = maxError;
-        } else if (rmse < minRMSE) {// && (minMaxError > maxError || maxError < minAllowableMaxError)) { // TODO don't forget about this fault min allowable error check
-          minRMSE = rmse;
-          bestP = p;
-          bestI = i;
-          bestD = d;
-          bestForcast = speed_test_helper.last_forcast_;
-          minMaxError = maxError;
-        }
-        break;
-      }
-      break;
+    if (first) {
+      first = false;
+      minRMSE = rmse;
+      bestP = p;
+      bestForcast = speed_test_helper.last_forcast_;
+      minMaxError = maxError;
+    } else if (rmse < minRMSE) {
+      minRMSE = rmse;
+      bestP = p;
+      bestForcast = speed_test_helper.last_forcast_;
+      minMaxError = maxError;
     }
     std::cerr << "Current P " << p << std::endl;
-    std::cerr << "CurBest P: " <<  bestP << " I: " << bestI << " D: " << bestD << std::endl;
+    std::cerr << "CurBest P: " <<  bestP << std::endl;
     std::cerr << "CurBest RMSE: " << minRMSE << std::endl;
     std::cerr << "CurBest MaxError: " << minMaxError << std::endl;
-    break;
+    //break;
   }
   speed_test_helper.logData(bestForcast);
   speed_test_helper.sync_csv_file.close();
-  std::cerr << std::endl << "Best P: " <<  bestP << " I: " << bestI << " D: " << bestD << std::endl;
+  std::cerr << std::endl << "Best P: " <<  bestP << std::endl;
   std::cerr << "Best RMSE: " << minRMSE << std::endl;
   std::cerr << "Best MaxError: " << minMaxError << std::endl;
 }

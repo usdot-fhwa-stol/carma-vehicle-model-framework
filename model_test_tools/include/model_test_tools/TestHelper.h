@@ -70,7 +70,7 @@ namespace model_test_tools {
    * \return A tuple of max error and RMSE where tuple element 0 is the max error and tuple element 1 is the RMSE value
    */ 
   std::tuple<double,double> getMaxErrorAndRMSE(const std::vector<double>& forcast, const std::vector<double>& observed) {
-    //std::cerr << "Forcast size: " << forcast.size() << " Observed Size: " << observed.size() << std::endl;
+
     double sumSqrs = 0;
     double maxError = 0;
     for (size_t i = 0; i < forcast.size(); i++) {
@@ -210,11 +210,6 @@ namespace model_test_tools {
           } else if (time - prev_pred_end_time > max_pred_time || n == stamps.size() - 1) { // If max_pred_time has passed since the last prediction period
             // Predict vehicle motion over just the last pred period
             std::vector<lib_vehicle_model::VehicleControlInput> control_inputs_section(current_cmds_.begin() + pred_start_idx, current_cmds_.begin() + n);
-            // std::cerr << "Control Input Section Start at Index: " << pred_start_idx << " Ending at: " << n << std::endl;
-            // for (auto control_input : control_inputs_section) {
-            //   std::cerr << "Cmd Speed: " << control_input.target_velocity << " Cmd Steer: " << control_input.target_steering_angle << std::endl;
-            // }
-            // std::cerr << std::endl;
             
             auto subForcast = pcm.predict(current_states_[pred_start_idx], control_inputs_section, timestep);
                         

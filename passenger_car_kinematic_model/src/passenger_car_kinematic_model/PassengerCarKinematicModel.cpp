@@ -38,17 +38,21 @@ void PassengerCarKinematicModel::setParameterServer(std::shared_ptr<ParameterSer
   param_server_ = parameter_server;
   
   // Load Parameters
-  bool l_f_param      = param_server_->getParam("length_to_f", l_f_);
-  bool l_r_param      = param_server_->getParam("length_to_r", l_r_);
-  bool ulR_f_param    = param_server_->getParam("unloaded_wheel_radius_f", ulR_f_);
-  bool ulR_r_param    = param_server_->getParam("unloaded_wheel_radius_r", ulR_r_);
-  bool lR_f_param     = param_server_->getParam("loaded_wheel_radius_f", lR_f_);
-  bool lR_r_param     = param_server_->getParam("loaded_wheel_radius_r", lR_r_);
-  bool speed_kP_param = param_server_->getParam("speed_kP", speed_kP_);
+  bool l_f_param          = param_server_->getParam("length_to_f", l_f_);
+  bool l_r_param          = param_server_->getParam("length_to_r", l_r_);
+  bool ulR_f_param        = param_server_->getParam("unloaded_wheel_radius_f", ulR_f_);
+  bool ulR_r_param        = param_server_->getParam("unloaded_wheel_radius_r", ulR_r_);
+  bool lR_f_param         = param_server_->getParam("loaded_wheel_radius_f", lR_f_);
+  bool lR_r_param         = param_server_->getParam("loaded_wheel_radius_r", lR_r_);
+  bool speed_kP_param     = param_server_->getParam("speed_kP", speed_kP_);
+  bool accel_limit_param  = param_server_->getParam("acceleration_limit", acceleration_limit_);
+  bool decel_limit_param  = param_server_->getParam("deceleration_limit", deceleration_limit_);
+  bool hard_braking_param = param_server_->getParam("hard_braking_threshold", hard_braking_threshold_);
 
   // Check if all the required parameters could be loaded
   if (!(l_f_param && l_r_param && ulR_f_param 
-    && ulR_r_param && lR_f_param && lR_r_param && speed_kP_param)) {
+    && ulR_r_param && lR_f_param && lR_r_param && speed_kP_param
+    && accel_limit_param && decel_limit_param && hard_braking_param)) {
 
     std::ostringstream msg;
     msg << "One of the required parameters could not be found or read " 
@@ -58,7 +62,10 @@ void PassengerCarKinematicModel::setParameterServer(std::shared_ptr<ParameterSer
       << " unloaded_wheel_radius_r: " << ulR_r_param
       << " loaded_wheel_radius_f: " << lR_f_param
       << " loaded_wheel_radius_r: " << lR_r_param
-      << " speed_kP: " << speed_kP_param;
+      << " speed_kP: " << speed_kP_param
+      << " acceleration_limit: " << accel_limit_param
+      << " deceleration_limit: " << decel_limit_param
+      << " hard_braking_threshold: " << hard_braking_param;
 
     throw std::invalid_argument(msg.str());
   }
@@ -111,7 +118,7 @@ std::vector<VehicleState> PassengerCarKinematicModel::predict(const VehicleState
     state[0]  = initial_state.X_pos_global;
     state[1]  = initial_state.Y_pos_global;
     state[2]  = initial_state.orientation;
-    state[3]  = initial_state.longitudinal_vel; // TODO if the lateral velocity is accounted for then this needs to be a magnitude as well
+    state[3]  = initial_state.longitudinal_vel;
 
     double prev_time = 0.0;
 
@@ -169,7 +176,6 @@ void PassengerCarKinematicModel::KinematicCarODE(const lib_vehicle_model::ODESol
   const double d_fc = control.target_steering_angle;  // Steering angle commend
   const double V_c  = control.target_velocity;        // Velocity command
 
-  //std::cerr << "V_c: " << V_c << "d_fc: " << d_fc << std::endl;
   // State = [X, Y, Theta, V]
   const double X     = state[0];
   const double Y     = state[1];
@@ -192,20 +198,15 @@ void PassengerCarKinematicModel::KinematicCarODE(const lib_vehicle_model::ODESol
 
 double PassengerCarKinematicModel::predictAccel(const double V, const double V_c) const {
   double kP = speed_kP_;
-  bool braking_hard = V > (V_c + 2.2); // If current speed is greater than the velocity command + 2.2 m/s
-  double max_value = 2.0; // 1.9439;
-  if (braking_hard)  {
-    //std::cerr << "Hard braking" << std::endl;
-    kP = kP * 2.0; // Increase value of kP by 10%
-    max_value = 5.0; // -5.023
-    // NOTE: It seems that the check for hard braking will disconnect when we get near the setpoint
-    // This is expected based on the boolean. But the data does not mimick this behavior. 
-    // I have confirmed that the integrator does NOT force the output to reach the setpoint at the end of the prediction TODO comment cleanup
+  bool braking_hard = V > (V_c + hard_braking_threshold_); // If current speed is greater than the velocity command + hard braking threshold
+  
+  if (braking_hard)  { // Check hard braking edge case
+    kP = kP * 2.0; // Increase value of kP by 100%
+    // NOTE: Experiments show that the PACMOD will break hard for step changes in the speed command
   }
 
   double P = kP * (V_c - V);
-
-  return std::min(std::max(P, -max_value), max_value);// TODO get these max output values set correctly
+  return std::min(std::max(P, -deceleration_limit_), acceleration_limit_);
 }
 
 void PassengerCarKinematicModel::ODEPostStep(const lib_vehicle_model::ODESolver::State& current,
@@ -220,10 +221,9 @@ void PassengerCarKinematicModel::ODEPostStep(const lib_vehicle_model::ODESolver:
   output = current;
   output.resize(FULL_STATE_SIZE);
 
-  // TODO: If the slip angle Beta was tracked it would be possible to back compute the lateral and longitudinal velocities
   // Copy over unstimulated values
   double dt = t - prev_time;
-  output[4]  = 0; // TODO This model assumes no lateral velocity
+  output[4]  = 0; // This model does not track lateral velocity
   output[5]  = dt == 0.0 ? 0.0 : (current[2] - prev_state[2]) / dt; // Yaw rate equals dTheta/dt
   output[6]  = output[3] / R_ef_; // Assume no slip. Velocity / radius = rotation rate
   output[7]  = output[3] / R_er_; // Assume no slip. 

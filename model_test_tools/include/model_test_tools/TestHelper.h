@@ -221,7 +221,7 @@ namespace model_test_tools {
    */ 
   class ModelTestHelper {
     public: 
-      const bool write_to_file_ = false;
+      const bool write_to_file_;
       const double timestep_ = 0.0;
       const double pred_period_ = 0.0;
 

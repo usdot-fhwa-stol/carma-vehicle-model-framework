@@ -908,7 +908,7 @@ TEST(PassengerCarDynamicModel, evaluate_overall_pred)
   //// 
   // Open Data File
   ////
-  model_test_tools::ModelTestHelper model_test_helper(true, 0.01, 6.0);
+  model_test_tools::ModelTestHelper model_test_helper(true, 0.01, 4.0);
 
   rosbag::Bag bag;
   bag.open("data/_2019-10-03-17-11-49_full_loop_validation_filtered.bag", rosbag::bagmode::Read);

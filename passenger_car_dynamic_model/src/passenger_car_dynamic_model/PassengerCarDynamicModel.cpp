@@ -133,7 +133,7 @@ std::vector<VehicleState> PassengerCarDynamicModel::predict(const VehicleState& 
 
 std::vector<VehicleState> PassengerCarDynamicModel::predict(const VehicleState& initial_state,
   const std::vector<VehicleControlInput>& control_inputs, double timestep) {
-        
+    auto mutable_control_inputs = control_inputs;
     // Construct output vector
     std::vector<VehicleState> resulting_states;
     resulting_states.reserve(control_inputs.size());
@@ -177,7 +177,7 @@ std::vector<VehicleState> PassengerCarDynamicModel::predict(const VehicleState& 
       control_inputs.size(),
       timestep,
       state,
-      control_inputs,
+      mutable_control_inputs,
       ode_outputs,
       post_step_func_,
       pid_tracker

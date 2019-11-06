@@ -272,8 +272,9 @@ TEST(lib_vehicle_model, predict_no_control)
 
 class VehicleStateFunctor {
   model_test_tools::ModelTestHelper& helper_;
+  double base_link_to_CG_dist_ = 0;
   public:
-    VehicleStateFunctor(model_test_tools::ModelTestHelper& helper) : helper_(helper)
+    VehicleStateFunctor(model_test_tools::ModelTestHelper& helper, double base_link_to_CG_dist) : helper_(helper), base_link_to_CG_dist_(base_link_to_CG_dist)
     {}
 
     // Callback for ode observer during integration
@@ -287,12 +288,16 @@ class VehicleStateFunctor {
       const double radPerSteeringRad = 0.05922;
       double stamp = pose_msg->header.stamp.toSec();
       lib_vehicle_model::VehicleState vs;
-      vs.X_pos_global = pose_msg->pose.position.x;
-      vs.Y_pos_global = pose_msg->pose.position.y;
       double roll, pitch, yaw;
       model_test_tools::getRPYFromPose(pose_msg->pose, roll, pitch, yaw);
 
       vs.orientation = yaw;
+
+      // Pose is provided in the base_link frame but the position of the CG is needed for this model
+      // Add the components of the offset from base_link to cg to the model
+      vs.X_pos_global = pose_msg->pose.position.x + (base_link_to_CG_dist_ * cos(yaw));
+      vs.Y_pos_global = pose_msg->pose.position.y + (base_link_to_CG_dist_ * sin(yaw));
+
       vs.longitudinal_vel = twist_msg->twist.linear.x;
       vs.lateral_vel = 0;
 
@@ -331,7 +336,7 @@ TEST(PassengerCarKinematicModel, evaluate_overall_pred)
   //// 
   // Open Data File
   ////
-  model_test_tools::ModelTestHelper model_test_helper(true, 0.1, 2.0);
+  model_test_tools::ModelTestHelper model_test_helper(false, 0.1, 6.0);
 
   rosbag::Bag bag;
   bag.open("data/_2019-10-03-17-11-49_full_loop_validation_filtered.bag", rosbag::bagmode::Read);
@@ -368,7 +373,7 @@ TEST(PassengerCarKinematicModel, evaluate_overall_pred)
   // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
   message_filters::Synchronizer<ApproxTimePolicy> sync(ApproxTimePolicy(100), pose_sub, imu_sub, wheel_sub, twist_sub, cmd_sub, steer_sub);
 
-  VehicleStateFunctor cb_functor(model_test_helper);
+  VehicleStateFunctor cb_functor(model_test_helper, paramIniter.length_to_r_);
   sync.registerCallback(boost::bind<void>(cb_functor, _1, _2, _3, _4, _5, _6));
 
   // Playback bag file to collect data
@@ -450,7 +455,7 @@ TEST(PassengerCarKinematicModel, DISABLED_find_speed_pid)
   rosbag::Bag bag;
   bag.open("data/_2019-10-30-11-57-22_5mps_6s_filtered.bag", rosbag::bagmode::Read);
 
-  ros::Time startTime(1572454661.71489); // For 5mps 1572454657.9144, for 10mps 1572454805.37492, for 5mps brake 1572454661.71489
+  ros::Time startTime(1572454657.9144); // For 5mps 1572454657.9144, for 10mps 1572454805.37492, for 5mps brake 1572454661.71489
   ros::Time endTime(1572454661.71489); // For 5mps ramp 1572454661.71489, for 10mps ramp 1572454813.07975
 
 
@@ -465,8 +470,8 @@ TEST(PassengerCarKinematicModel, DISABLED_find_speed_pid)
   topics.push_back(vehicle_cmd_tpc);
   topics.push_back(gps_tpc);
 
-  rosbag::View view(bag, rosbag::TopicQuery(topics), startTime);
-  //rosbag::View view(bag, rosbag::TopicQuery(topics), startTime, endTime);
+  //rosbag::View view(bag, rosbag::TopicQuery(topics), startTime);
+  rosbag::View view(bag, rosbag::TopicQuery(topics), startTime, endTime);
   //rosbag::View view(bag, rosbag::TopicQuery(topics));
 
   model_test_tools::BagSubscriber<sensor_msgs::Imu> imu_sub(imu_tpc);

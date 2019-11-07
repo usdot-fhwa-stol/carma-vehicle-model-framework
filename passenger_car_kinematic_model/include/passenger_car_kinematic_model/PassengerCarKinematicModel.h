@@ -54,19 +54,20 @@ class PassengerCarKinematicModel: public lib_vehicle_model::VehicleMotionModel
     std::shared_ptr<lib_vehicle_model::ParameterServer> param_server_;
     
     // Parameters
-    double l_f_; // Distance from front wheel to CG in m
-    double l_r_; // Distance from rear wheel to CG in m
-    double wheel_base_; // Total wheel base in m
-    double ulR_f_; // Unloaded radius of front tire in m
-    double ulR_r_; // Unloaded radius of rear tire in m
-    double lR_f_; // Loaded radius of front tire in m
-    double lR_r_; // Loaded radius of rear tire in m
-    double R_ef_; // The vertical distance from the front axle to the ground when the vehicle is loaded. (m)
-    double R_er_; // The vertical distance from the rear axle to the ground when the vehicle is loaded. (m)
-    double speed_kP_; // The proportional value used to convert error in current speed into acceleration
-    double acceleration_limit_; // The maximum possible acceleration of the vehicle (m/s^2)
-    double deceleration_limit_; // The maximum possible deceleration of the vehicle (m/s^2)
-    double hard_braking_threshold_; // The speed error required for the controller to enter a hard braking state where is forces maximum deceleration until near the setpoint (m/s)
+    // Initialized with reasonable values but should overwritten with call to setParameterServer
+    double l_f_                    = 1.0;   // Distance from front wheel to CG in m
+    double l_r_                    = 1.0;   // Distance from rear wheel to CG in m
+    double wheel_base_             = 2.0;   // Total wheel base in m
+    double ulR_f_                  = 0.34;  // Unloaded radius of front tire in m
+    double ulR_r_                  = 0.34;  // Unloaded radius of rear tire in m
+    double lR_f_                   = 0.34;  // Loaded radius of front tire in m
+    double lR_r_                   = 0.34;  // Loaded radius of rear tire in m
+    double R_ef_                   = 0.34;  // The vertical distance from the front axle to the ground when the vehicle is loaded. (m)
+    double R_er_                   = 0.34;  // The vertical distance from the rear axle to the ground when the vehicle is loaded. (m)
+    double speed_kP_               = 0.8;   // The proportional value used to convert error in current speed into acceleration
+    double acceleration_limit_     = 3.0;   // The maximum possible acceleration of the vehicle (m/s^2)
+    double deceleration_limit_     = 6.0;   // The maximum possible deceleration of the vehicle (m/s^2)
+    double hard_braking_threshold_ = 2.2;   // The speed error required for the controller to enter a hard braking state where is forces maximum deceleration until near the setpoint (m/s)
 
     /*
      * @brief Function describing the ODE system which defines the vehicle equations of motion

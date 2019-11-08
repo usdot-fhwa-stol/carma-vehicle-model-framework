@@ -90,8 +90,9 @@ std::vector<VehicleState> PassengerCarDynamicModel::predict(const VehicleState& 
   }
 
 std::vector<VehicleState> PassengerCarDynamicModel::predict(const VehicleState& initial_state,
-  const std::vector<VehicleControlInput>& control_inputs, double timestep) {
-        
+  const std::vector<VehicleControlInput>& controls, double timestep) {
+    // Copy control inputs vector to modifieable vector
+    std::vector<VehicleControlInput> control_inputs = controls;
     // Construct output vector
     std::vector<VehicleState> resulting_states;
     resulting_states.reserve(control_inputs.size());

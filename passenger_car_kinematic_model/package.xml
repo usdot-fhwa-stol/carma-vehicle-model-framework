@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<package format="2">
+<package format="3">
   <name>passenger_car_kinematic_model</name>
   <version>2.1.0</version>
   <description>

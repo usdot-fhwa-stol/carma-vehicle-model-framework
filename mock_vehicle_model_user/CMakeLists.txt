@@ -106,7 +106,6 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES ${PROJECT_NAME}
    CATKIN_DEPENDS lib_vehicle_model
 #  DEPENDS system_lib
 )
@@ -154,7 +153,6 @@ add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catk
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_node
- # lib_vehicle_model
   ${catkin_LIBRARIES}
 )
 

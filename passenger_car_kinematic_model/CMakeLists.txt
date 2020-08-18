@@ -49,7 +49,7 @@ include_directories(
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}
-  lib_vehicle_model
+  #lib_vehicle_model
   ${catkin_LIBRARIES}
 )
 
@@ -130,7 +130,7 @@ if (CATKIN_ENABLE_TESTING)
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test # Add test directory as working directory for unit tests
   )
 
-  target_link_libraries(${PROJECT_NAME}-test lib_vehicle_model 
+  target_link_libraries(${PROJECT_NAME}-test #lib_vehicle_model 
     ${PROJECT_NAME} 
     ${catkin_LIBRARIES}
     ${tf2_LIBRARIES}
@@ -149,7 +149,7 @@ if (CATKIN_ENABLE_TESTING)
   )
 
   add_dependencies( ${PROJECT_NAME}-test lib_vehicle_model 
-    ${${PROJECT_NAME}_EXPORTED_TARGETS} 
+    ${passenger_car_kinematic_model_EXPORTED_TARGETS} 
     ${catkin_EXPORTED_TARGETS}
     ${tf2_EXPORTED_TARGETS}
     ${rosbag_EXPORTED_TARGETS}

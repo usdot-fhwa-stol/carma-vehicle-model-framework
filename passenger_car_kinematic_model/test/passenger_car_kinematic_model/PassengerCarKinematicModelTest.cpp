@@ -37,7 +37,7 @@
 #include "passenger_car_kinematic_model/PassengerCarKinematicModel.h"
 #include <model_test_tools/TestHelper.h>
 #include <gps_common/GPSFix.h>
-#include "sigpack.h"
+#include "sigpack/sigpack.h"
 
 
 /**

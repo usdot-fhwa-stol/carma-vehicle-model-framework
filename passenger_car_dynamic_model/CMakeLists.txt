@@ -149,7 +149,7 @@ include_directories(
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}
-  lib_vehicle_model
+  #lib_vehicle_model
   ${catkin_LIBRARIES}
 )
 
@@ -199,8 +199,8 @@ catkin_add_gmock(${PROJECT_NAME}-test
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test # Add test directory as working directory for unit tests
 )
 if(TARGET ${PROJECT_NAME}-test)
-  target_link_libraries(${PROJECT_NAME}-test lib_vehicle_model ${PROJECT_NAME} ${catkin_LIBRARIES})
-  add_dependencies( ${PROJECT_NAME}-test lib_vehicle_model ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME} ${catkin_LIBRARIES})
+  add_dependencies( ${PROJECT_NAME}-test  ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 endif()
 
 ## Add folders to be run by python nosetests

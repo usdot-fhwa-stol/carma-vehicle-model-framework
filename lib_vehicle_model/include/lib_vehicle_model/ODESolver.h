@@ -93,4 +93,4 @@ namespace lib_vehicle_model {
 
 // Template functions cannot be linked unless the implementation is provided
 // Therefore include implementation to allow for template functions
-#include "../../src/lib_vehicle_model/ODESolver.cpp"
+#include "internal/ODESolver.cpp"

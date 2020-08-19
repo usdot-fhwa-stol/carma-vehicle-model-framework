@@ -147,7 +147,7 @@ if (CATKIN_ENABLE_TESTING)
     ${gps_common_LIBRARIES}
   )
 
-  add_dependencies( ${PROJECT_NAME}-test lib_vehicle_model 
+  add_dependencies( ${PROJECT_NAME}-test 
     ${${PROJECT_NAME}_EXPORTED_TARGETS} 
     ${catkin_EXPORTED_TARGETS}
     ${tf2_EXPORTED_TARGETS}

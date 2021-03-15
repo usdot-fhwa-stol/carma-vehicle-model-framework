@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 LEIDOS.
+ * Copyright (C) 2019-2021 LEIDOS.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -37,7 +37,7 @@
 #include "passenger_car_kinematic_model/PassengerCarKinematicModel.h"
 #include <model_test_tools/TestHelper.h>
 #include <gps_common/GPSFix.h>
-#include "sigpack.h"
+#include <sigpack/sigpack.h>
 
 
 /**

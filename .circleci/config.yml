@@ -1,6 +1,6 @@
 version: 2
 
-#  Copyright (C) 2018-2019 LEIDOS.
+#  Copyright (C) 2018-2021 LEIDOS.
 # 
 #  Licensed under the Apache License, Version 2.0 (the "License"); you may not
 #  use this file except in compliance with the License. You may obtain a copy of
@@ -28,7 +28,7 @@ jobs:
     # Pull docker image from docker hub
     # XTERM used for better catkin_make output
     docker:
-      - image: usdotfhwastol/autoware.ai:3.4.0
+      - image: usdotfhwastol/autoware.ai:carma-system-3.5.0
         user: carma
         environment:
           TERM: xterm
@@ -53,8 +53,8 @@ jobs:
           command: |
             source ${INIT_ENV}
             cd src
-            git clone --depth=1 https://github.com/usdot-fhwa-stol/CARMAUtils.git --branch CARMAUtils_1.3.0
-            git clone --depth=1 https://github.com/usdot-fhwa-stol/CARMAMsgs.git --branch CARMAMsgs_1.1.0
+            git clone --depth=1 https://github.com/usdot-fhwa-stol/carma-utils.git --branch carma-system-3.5.0
+            git clone --depth=1 https://github.com/usdot-fhwa-stol/carma-msgs.git --branch carma-system-3.5.0
       - run:
           name: Build CARMAVehicleModelFramework
           command: |

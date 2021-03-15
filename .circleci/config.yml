@@ -53,8 +53,8 @@ jobs:
           command: |
             source ${INIT_ENV}
             cd src
-            git clone --depth=1 https://github.com/usdot-fhwa-stol/carma-utils.git --branch feature/building_with_colcon
-            git clone --depth=1 https://github.com/usdot-fhwa-stol/carma-msgs.git --branch CARMAMsgs_1.1.0
+            git clone --depth=1 https://github.com/usdot-fhwa-stol/carma-utils.git --branch carma-system-3.5.0
+            git clone --depth=1 https://github.com/usdot-fhwa-stol/carma-msgs.git --branch carma-system-3.5.0
       - run:
           name: Build CARMAVehicleModelFramework
           command: |

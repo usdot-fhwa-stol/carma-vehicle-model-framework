@@ -11,6 +11,7 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   <depend>lib_vehicle_model</depend>
+  <build_depend>carma_cmake_common</build_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

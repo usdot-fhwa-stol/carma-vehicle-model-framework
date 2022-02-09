@@ -13,7 +13,7 @@
   <buildtool_depend>catkin</buildtool_depend>
   <depend>lib_vehicle_model</depend>
   <depend>ompl</depend>
-
+  <build_depend>carma_cmake_common</build_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

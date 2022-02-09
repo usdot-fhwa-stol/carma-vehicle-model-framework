@@ -24,6 +24,7 @@
   <test_depend>model_test_tools</test_depend>
   <test_depend>sigpack</test_depend>
   <test_depend>gps_common</test_depend>
+  <build_depend>carma_cmake_common</build_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

@@ -13,6 +13,7 @@
   <depend>lib_vehicle_model</depend>
   <depend>tf2</depend>
   <depend>geometry_msgs</depend>
+  <build_depend>carma_cmake_common</build_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

@@ -54,8 +54,8 @@ jobs:
           command: |
             source ${INIT_ENV}
             cd src
-            git clone --depth=1 https://github.com/usdot-fhwa-stol/carma-utils.git --branch develop
-            git clone --depth=1 https://github.com/usdot-fhwa-stol/carma-msgs.git --branch develop
+            git clone --depth=1 https://github.com/usdot-fhwa-stol/carma-utils.git --branch carma-system-4.0.0
+            git clone --depth=1 https://github.com/usdot-fhwa-stol/carma-msgs.git --branch carma-system-4.0.0
       - run:
           name: Build CARMAVehicleModelFramework
           command: |

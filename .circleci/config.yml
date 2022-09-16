@@ -57,6 +57,11 @@ jobs:
             git clone --depth=1 https://github.com/usdot-fhwa-stol/carma-utils.git --branch develop
             git clone --depth=1 https://github.com/usdot-fhwa-stol/carma-msgs.git --branch develop
       - run:
+          name: Install dependencies
+          command: |
+            source ${INIT_ENV}
+            rosdep install --from-paths /opt/carma/src/CARMAVehicleModelFramework --ignore-src -y
+      - run:
           name: Build CARMAVehicleModelFramework
           command: |
             source ${INIT_ENV}

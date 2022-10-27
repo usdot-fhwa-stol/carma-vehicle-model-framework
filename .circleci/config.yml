@@ -60,7 +60,7 @@ jobs:
           name: Install dependencies
           command: |
             source ${INIT_ENV}
-            sudo apt install ros-noetic-moveit
+            sudo apt update
             rosdep install --from-paths /opt/carma/src/CARMAVehicleModelFramework --ignore-src -y
       - run:
           name: Build CARMAVehicleModelFramework

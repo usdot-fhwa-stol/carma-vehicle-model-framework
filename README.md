@@ -1,6 +1,6 @@
-| CicleCI Build Status | Sonar Code Quality |
+| CI Build Status | Sonar Code Quality |
 |------|-----|
-[![CircleCI](https://img.shields.io/circleci/build/gh/usdot-fhwa-stol/carma-vehicle-model-framework/develop?label=CircleCI)](https://app.circleci.com/pipelines/github/usdot-fhwa-stol/carma-vehicle-model-framework?branch=develop) | [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=usdot-fhwa-stol_CARMAVehicleModelFramework&metric=alert_status)](https://sonarcloud.io/dashboard?id=usdot-fhwa-stol_CARMAVehicleModelFramework) 
+[![CI](https://github.com/usdot-fhwa-stol/carma-vehicle-model-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/usdot-fhwa-stol/carma-vehicle-model-framework/actions/workflows/ci.yml) | [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=usdot-fhwa-stol_CARMAVehicleModelFramework&metric=alert_status)](https://sonarcloud.io/dashboard?id=usdot-fhwa-stol_CARMAVehicleModelFramework)
 
 # CARMAVehicleModelFramework
 CARMAVehicleModelFramework contains packages and libraries related to developing vehicle kinematics

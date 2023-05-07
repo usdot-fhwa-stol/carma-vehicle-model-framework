@@ -21,6 +21,7 @@ jobs:
     - name: Checkout ${{ github.event.repository.name }}
       uses: actions/checkout@v3.3.0
       with:
+        fetch-depth: 0
         path: src/${{ github.event.repository.name }}
     - name: Checkout carma-utils
       uses: actions/checkout@v3.3.0

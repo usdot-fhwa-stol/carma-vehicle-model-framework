@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  build:
+    defaults:
+      run:
+        shell: bash
+        working-directory: "/opt/carma/"
+    runs-on: ubuntu-latest
+    container:
+      image: usdotfhwastol/autoware.ai:carma-system-4.5.0
+      env:
+        INIT_ENV: "/home/carma/.base-image/init-env.sh"
+        TERM: xterm
+      options: "--user root"
+    steps:
+    - name: Checkout ${{ github.event.repository.name }}
+      uses: actions/checkout@v3.3.0
+      with:
+        fetch-depth: 0
+        path: src/${{ github.event.repository.name }}
+    - name: Checkout carma-utils
+      uses: actions/checkout@v3.3.0
+      with:
+        repository: usdot-fhwa-stol/carma-utils
+        path: src/carma-utils
+    - name: Checkout carma-msgs
+      uses: actions/checkout@v3.3.0
+      with:
+        repository: usdot-fhwa-stol/carma-msgs
+        path: src/carma-msgs
+    - name: Move source code
+      run: mv $GITHUB_WORKSPACE/src /opt/carma/
+    - name: Install dependencies
+      run: |
+        source "$INIT_ENV"
+        apt-get update
+        rosdep update
+        rosdep install --from-paths /opt/carma/src/"${{ github.event.repository.name }}" --ignore-src -y
+    - name: Build
+      run: |
+        source "$INIT_ENV"
+        sed -i '/colcon build/ s/$/ --packages-up-to lib_vehicle_model mock_vehicle_model_shared_lib mock_vehicle_model_user model_test_tools passenger_car_dynamic_model passenger_car_kinematic_model/' /home/carma/.ci-image/engineering_tools/code_coverage/make_with_coverage.bash
+        make_with_coverage.bash -m -e /opt/carma/ -o ./coverage_reports/gcov
+    - name: Run C++ Tests
+      run: |
+        source "$INIT_ENV"
+        sed -i '/colcon test/ s/$/ --packages-above lib_vehicle_model mock_vehicle_model_shared_lib mock_vehicle_model_user model_test_tools passenger_car_dynamic_model passenger_car_kinematic_model/' /home/carma/.ci-image/engineering_tools/code_coverage/make_with_coverage.bash
+        make_with_coverage.bash -t -e /opt/carma/ -o ./coverage_reports/gcov
+    - name: Run SonarScanner
+      uses: usdot-fhwa-stol/actions/sonar-scanner@main
+      with:
+        sonar-token: ${{ secrets.SONAR_TOKEN }}
+        working-dir: "/opt/carma/src/${{ github.event.repository.name }}"

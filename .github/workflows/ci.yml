@@ -5,31 +5,40 @@ on:
   push:
 
 jobs:
+  determine_docker_org_and_tag:
+    runs-on: ubuntu-latest
+    outputs:
+      docker_organization: ${{ steps.docker-org-and-tag.outputs.docker_organization }}
+      docker_image_tag: ${{ steps.docker-org-and-tag.outputs.docker_image_tag }}
+    steps:
+      - id: docker-org-and-tag
+        uses: usdot-fhwa-stol/actions/docker-org-and-tag@main
   build:
+    needs: determine_docker_org_and_tag
     defaults:
       run:
         shell: bash
         working-directory: "/opt/carma/"
     runs-on: ubuntu-latest
     container:
-      image: usdotfhwastol/autoware.ai:carma-system-4.5.0
+      image: ${{ needs.determine_docker_org_and_tag.outputs.docker_organization }}/autoware.ai:${{ needs.determine_docker_org_and_tag.outputs.docker_image_tag }}
       env:
         INIT_ENV: "/home/carma/.base-image/init-env.sh"
         TERM: xterm
       options: "--user root"
     steps:
     - name: Checkout ${{ github.event.repository.name }}
-      uses: actions/checkout@v3.3.0
+      uses: actions/checkout@v3
       with:
         fetch-depth: 0
         path: src/${{ github.event.repository.name }}
     - name: Checkout carma-utils
-      uses: actions/checkout@v3.3.0
+      uses: actions/checkout@v3
       with:
         repository: usdot-fhwa-stol/carma-utils
         path: src/carma-utils
     - name: Checkout carma-msgs
-      uses: actions/checkout@v3.3.0
+      uses: actions/checkout@v3
       with:
         repository: usdot-fhwa-stol/carma-msgs
         path: src/carma-msgs

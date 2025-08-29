@@ -4,6 +4,7 @@ on:
     branches:
       - develop
       - master
+      - fix_ci_build
       - "release/*"
   pull_request:
       types: [opened, synchronize, reopened]
@@ -24,24 +25,24 @@ jobs:
         working-directory: "/opt/carma/"
     runs-on: ubuntu-latest
     container:
-      image: ${{ needs.determine_docker_org_and_tag.outputs.docker_organization }}/autoware.ai:${{ needs.determine_docker_org_and_tag.outputs.docker_image_tag }}
+      image: ${{ needs.determine_docker_org_and_tag.outputs.docker_organization }}/autoware.ai:develop
       env:
         INIT_ENV: "/home/carma/.base-image/init-env.sh"
         TERM: xterm
       options: "--user root"
     steps:
     - name: Checkout ${{ github.event.repository.name }}
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
         path: src/${{ github.event.repository.name }}
     - name: Checkout carma-utils
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: usdot-fhwa-stol/carma-utils
         path: src/carma-utils
     - name: Checkout carma-msgs
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: usdot-fhwa-stol/carma-msgs
         path: src/carma-msgs
